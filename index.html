@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Retiro, Frío, Legumbres y Pasillos</title>
-    <!-- Librería para leer códigos de barras con la cámara -->
+    <title>Control en Línea - Pasillos y Precios</title>
+    <!-- Librerías de Supabase, Quagga y JsBarcode -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
-    <!-- Librería para generar códigos de barras visuales -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
@@ -21,7 +21,7 @@
         h1 { font-size: 20px; font-weight: bold; color: #111827; }
         p { font-size: 13px; color: #6b7280; }
         
-        .badge { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 500; display: inline-block; }
+        .badge { background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 500; display: inline-block; }
         
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab-btn { background: #e5e7eb; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: #4b5563; }
@@ -57,13 +57,13 @@
         @media(min-width: 1024px) { .grid-sections { grid-template-columns: repeat(2, 1fr); } }
         
         .section-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid #ccc; margin-bottom: 20px; }
-        .border-frio { border-top-color: #0ea5e9; } /* Frío/Nevera */
-        .border-legsin { border-top-color: #f59e0b; } /* Legumbres sin cad */
-        .border-legcon { border-top-color: #10b981; } /* Legumbres empacadas */
-        .border-pasillo1 { border-top-color: #6366f1; } /* Limpieza */
-        .border-pasillo2 { border-top-color: #ec4899; } /* Snack */
-        .border-pasillo3 { border-top-color: #84cc16; } /* Granos */
-        .border-pasillo5 { border-top-color: #8b5cf6; } /* Ferri */
+        .border-frio { border-top-color: #0ea5e9; }
+        .border-legsin { border-top-color: #f59e0b; }
+        .border-legcon { border-top-color: #10b981; }
+        .border-pasillo1 { border-top-color: #6366f1; }
+        .border-pasillo2 { border-top-color: #ec4899; }
+        .border-pasillo3 { border-top-color: #84cc16; }
+        .border-pasillo5 { border-top-color: #8b5cf6; }
 
         .section-card h3 { font-size: 15px; font-weight: bold; color: #1f2937; margin-bottom: 2px; }
         .section-card p { margin-bottom: 12px; }
@@ -91,17 +91,17 @@
     <div class="container">
         <!-- Notificación Flotante por Horario -->
         <div id="alertaHorario">
-            🚨 ¡HORARIO DE RETIRO ACTIVO (6:30 PM - 9:00 PM)! Tienes productos en frío, legumbres y pasillos que deben retirarse.
+            🚨 ¡HORARIO DE RETIRO ACTIVO (6:30 PM - 9:00 PM)! Tienes productos que deben retirarse.
         </div>
 
         <!-- Encabezado -->
         <header>
             <div>
-                <h1>Control de Retiro de Productos</h1>
-                <p>Gestión de neveras, legumbres y pasillos según políticas internas.</p>
+                <h1>Control en Línea (Tiempo Real)</h1>
+                <p>Sincronizado en la nube con Supabase.</p>
             </div>
             <div class="badge">
-                Reglas: Frío (5d) | Legumbres (8d / 2d) | Pasillos (3d)
+                ☁️ Estado: Conectado a la Nube
             </div>
             <div class="tabs" style="margin-top: 10px;">
                 <button class="tab-btn active" onclick="cambiarTab('vencimientos')">📦 Control de Retiros</button>
@@ -109,11 +109,11 @@
             </div>
         </header>
 
-        <!-- SECCIÓN 1: VENCIMIENTOS Y RETIROS -->
+        <!-- SECCIÓN 1: VENCIMIENTOS -->
         <div id="seccion-vencimientos">
             <div class="card">
                 <h2>
-                    <span>Registrar Producto</span>
+                    <span>Registrar Producto en Línea</span>
                     <span id="modoForm" style="font-size: 12px; color: #0284c7; font-weight: normal;">Modo: Ingreso manual o pistola</span>
                 </h2>
 
@@ -145,158 +145,82 @@
                         <select id="categoria" required>
                             <option value="frio">❄️ Nevera / Productos de Frío (Retiro 5 días antes)</option>
                             <option value="legumbre_sin_cad">🌱 Legumbres (Solo elaboración - Retiro 8 días)</option>
-                            <option value="legumbre_con_cad">📦 Legumbres Empacadas (Elaboración + Caducidad - Retiro 2 días antes)</option>
+                            <option value="legumbre_con_cad">📦 Legumbres Empacadas (Retiro 2 días antes)</option>
                             <option value="pasillo1">🛒 Pasillo 1: Limpieza (Retiro 3 días antes)</option>
                             <option value="pasillo2">🍿 Pasillo 2: Snack (Retiro 3 días antes)</option>
                             <option value="pasillo3">🌾 Pasillo 3: Granos (Retiro 3 días antes)</option>
-                            <option value="pasillo5">🔩 Pasillo 5: Ferri / Ferretería (Retiro 3 días antes)</option>
+                            <option value="pasillo5">🔩 Pasillo 5: Ferri (Retiro 3 días antes)</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label id="labelFecha">Fecha de Caducidad / Vencimiento</label>
                         <input type="date" id="fechaPrincipal" required>
                     </div>
-                    <button type="submit" class="btn-submit" id="btnSubmitText">Guardar en el Sistema</button>
+                    <button type="submit" class="btn-submit" id="btnSubmitText">Guardar en la Nube</button>
                 </form>
             </div>
 
-            <!-- Secciones ordenadas: Primero Frío y Legumbres, luego Pasillos -->
+            <!-- Secciones -->
             <div class="grid-sections">
-                <!-- 1. Nevera / Productos de Frío -->
                 <div class="section-card border-frio">
                     <h3>❄️ Nevera / Productos de Frío</h3>
-                    <p>Se retira con 5 días antes de su vencimiento.</p>
                     <div class="table-responsive">
                         <table>
-                            <thead>
-                                <tr>
-                                    <th>Código / Producto</th>
-                                    <th>Caducidad</th>
-                                    <th>Fecha Retiro</th>
-                                    <th>Estado</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
                             <tbody id="lista-frio"></tbody>
                         </table>
                     </div>
                 </div>
-
-                <!-- 2. Legumbres (Sin caducidad) -->
                 <div class="section-card border-legsin">
-                    <h3>🌱 Legumbres (Sin fecha de caducidad)</h3>
-                    <p>Se retiran a los 8 días de la elaboración.</p>
+                    <h3>🌱 Legumbres (Sin caducidad)</h3>
                     <div class="table-responsive">
                         <table>
-                            <thead>
-                                <tr>
-                                    <th>Código / Producto</th>
-                                    <th>Elaboración</th>
-                                    <th>Fecha Retiro</th>
-                                    <th>Estado</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th>Código / Producto</th><th>Elaboración</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
                             <tbody id="lista-legumbre_sin_cad"></tbody>
                         </table>
                     </div>
                 </div>
-
-                <!-- 3. Legumbres Empacadas -->
                 <div class="section-card border-legcon">
                     <h3>📦 Legumbres Empacadas</h3>
-                    <p>Se retiran 2 días antes de su vencimiento.</p>
                     <div class="table-responsive">
                         <table>
-                            <thead>
-                                <tr>
-                                    <th>Código / Producto</th>
-                                    <th>Caducidad</th>
-                                    <th>Fecha Retiro</th>
-                                    <th>Estado</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
                             <tbody id="lista-legumbre_con_cad"></tbody>
                         </table>
                     </div>
                 </div>
-
-                <!-- 4. Pasillo 1: Limpieza -->
                 <div class="section-card border-pasillo1">
                     <h3>🛒 Pasillo 1: Limpieza</h3>
-                    <p>Se retira con 3 días antes de su vencimiento.</p>
                     <div class="table-responsive">
                         <table>
-                            <thead>
-                                <tr>
-                                    <th>Código / Producto</th>
-                                    <th>Caducidad</th>
-                                    <th>Fecha Retiro</th>
-                                    <th>Estado</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
                             <tbody id="lista-pasillo1"></tbody>
                         </table>
                     </div>
                 </div>
-
-                <!-- 5. Pasillo 2: Snack -->
                 <div class="section-card border-pasillo2">
                     <h3>🍿 Pasillo 2: Snack</h3>
-                    <p>Se retira con 3 días antes de su vencimiento.</p>
                     <div class="table-responsive">
                         <table>
-                            <thead>
-                                <tr>
-                                    <th>Código / Producto</th>
-                                    <th>Caducidad</th>
-                                    <th>Fecha Retiro</th>
-                                    <th>Estado</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
                             <tbody id="lista-pasillo2"></tbody>
                         </table>
                     </div>
                 </div>
-
-                <!-- 6. Pasillo 3: Granos -->
                 <div class="section-card border-pasillo3">
                     <h3>🌾 Pasillo 3: Granos</h3>
-                    <p>Se retira con 3 días antes de su vencimiento.</p>
                     <div class="table-responsive">
                         <table>
-                            <thead>
-                                <tr>
-                                    <th>Código / Producto</th>
-                                    <th>Caducidad</th>
-                                    <th>Fecha Retiro</th>
-                                    <th>Estado</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
                             <tbody id="lista-pasillo3"></tbody>
                         </table>
                     </div>
                 </div>
-
-                <!-- 7. Pasillo 5: Ferri -->
                 <div class="section-card border-pasillo5">
-                    <h3>🔩 Pasillo 5: Ferri (Ferretería)</h3>
-                    <p>Se retira con 3 días antes de su vencimiento.</p>
+                    <h3>🔩 Pasillo 5: Ferri</h3>
                     <div class="table-responsive">
                         <table>
-                            <thead>
-                                <tr>
-                                    <th>Código / Producto</th>
-                                    <th>Caducidad</th>
-                                    <th>Fecha Retiro</th>
-                                    <th>Estado</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
                             <tbody id="lista-pasillo5"></tbody>
                         </table>
                     </div>
@@ -307,9 +231,9 @@
         <!-- SECCIÓN 2: SOLICITUDES DE PRECIO -->
         <div id="seccion-solicitudes" class="hidden-section">
             <div class="price-request-card">
-                <h2>Apartado de Solicitudes de Precio</h2>
+                <h2>Apartado de Solicitudes de Precio (En Línea)</h2>
                 <div class="counter-badge" id="textoContadorPrecios">Tienes 0 solicitudes pendientes</div>
-                <p style="color: #64748b; font-size: 13px; margin-bottom: 16px;">Escanea o escribe el código de barras y cuántas etiquetas necesitas. Una vez impresas, elimínalas para mantener la lista limpia.</p>
+                <p style="color: #64748b; font-size: 13px; margin-bottom: 16px;">Sincronizado en tiempo real con el personal de impresión.</p>
                 
                 <div class="card" style="background: #f8fafc; border: 1px solid #cbd5e1; margin-bottom: 20px;">
                     <div style="margin-bottom: 12px;">
@@ -328,7 +252,7 @@
                             <input type="number" id="solCantidad" min="1" value="1" required>
                         </div>
                         <div style="display: flex; align-items: flex-end;">
-                            <button type="submit" style="background: #2563eb; color: white; border: none; padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; height: 38px;">Generar Solicitud</button>
+                            <button type="submit" style="background: #2563eb; color: white; border: none; padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; height: 38px;">Enviar a la Nube</button>
                         </div>
                     </form>
                 </div>
@@ -339,8 +263,14 @@
     </div>
 
     <script>
-        let productos = JSON.parse(localStorage.getItem('productos_sistema_total')) || [];
-        let solicitudesPrecio = JSON.parse(localStorage.getItem('solicitudes_precio')) || [];
+        // CREDENCIALES DE SUPABASE INTEGRADAS
+        const SUPABASE_URL = 'https://dbnlkdalbczxnizyrxez.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRibmxrZGFsYmN6eG5penlyeGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1MzE1ODUsImV4cCI6MjEwNTEwNzU4NX0.IAg6BdfzY4aqIBS6RQhafkRr_aeYos7pdaGAS8L16kA';
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let productos = [];
+        let solicitudesPrecio = [];
 
         const inputCodigo = document.getElementById('codigoEscaneado');
         const inputBuscador = document.getElementById('inputBuscador');
@@ -387,6 +317,29 @@
         setInterval(verificarHorarioNotificacion, 30000);
         verificarHorarioNotificacion();
 
+        // Cargar datos iniciales desde Supabase
+        async function cargarDatos() {
+            const { data: prodData } = await supabaseClient.from('productos_sistema').select('*');
+            if (prodData) productos = prodData;
+
+            const { data: solData } = await supabaseClient.from('solicitudes_precio').select('*');
+            if (solData) solicitudesPrecio = solData;
+
+            renderizarTablas();
+            renderizarSolicitudesPrecio();
+        }
+
+        // Configurar Realtime para actualización instantánea en tiempo real
+        supabaseClient
+            .channel('cambios-en-tiempo-real')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'productos_sistema' }, payload => {
+                cargarDatos();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitudes_precio' }, payload => {
+                cargarDatos();
+            })
+            .subscribe();
+
         categoriaSelect.addEventListener('change', () => {
             if (categoriaSelect.value === 'legumbre_sin_cad') {
                 labelFecha.textContent = "Fecha de Elaboración";
@@ -409,19 +362,19 @@
                 categoriaSelect.value = existente.categoria;
                 modoForm.textContent = `Actualizando lote para: ${existente.nombre} (Cod: ${codigo})`;
                 modoForm.style.color = '#f59e0b';
-                btnSubmitText.textContent = "Registrar Nuevo Lote / Fecha";
+                btnSubmitText.textContent = "Actualizar en la Nube";
             } else {
                 modoForm.textContent = `Registrando nuevo código: ${codigo}`;
                 modoForm.style.color = '#10b981';
                 inputNombre.value = '';
-                btnSubmitText.textContent = "Guardar en el Sistema";
+                btnSubmitText.textContent = "Guardar en la Nube";
             }
         }
 
         inputBuscador.addEventListener('input', renderizarTablas);
 
-        // Formulario de Vencimientos con reglas exactas
-        document.getElementById('productForm').addEventListener('submit', (e) => {
+        // Guardar Vencimiento en Supabase
+        document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const codigo = codigoBarraGuardar.value || inputCodigo.value.trim() || ('CODE-' + Math.floor(100000 + Math.random() * 900000));
             const nombre = inputNombre.value.trim();
@@ -429,79 +382,54 @@
             const fechaStr = fechaPrincipalInput.value;
 
             let fechaRetiro = new Date(fechaStr + 'T00:00:00');
+            if (categoria === 'legumbre_sin_cad') fechaRetiro.setDate(fechaRetiro.getDate() + 8);
+            else if (categoria === 'legumbre_con_cad') fechaRetiro.setDate(fechaRetiro.getDate() - 2);
+            else if (categoria === 'frio') fechaRetiro.setDate(fechaRetiro.getDate() - 5);
+            else fechaRetiro.setDate(fechaRetiro.getDate() - 3);
 
-            // Aplicar reglas estrictas de la jefa:
-            if (categoria === 'legumbre_sin_cad') {
-                // Legumbres sin caducidad: se retiran a los 8 días de elaboración
-                fechaRetiro.setDate(fechaRetiro.getDate() + 8);
-            } else if (categoria === 'legumbre_con_cad') {
-                // Legumbres empacadas: se retiran 2 días antes
-                fechaRetiro.setDate(fechaRetiro.getDate() - 2);
-            } else if (categoria === 'frio') {
-                // Productos de frío: se retiran 5 días antes
-                fechaRetiro.setDate(fechaRetiro.getDate() - 5);
-            } else {
-                // Pasillos (Limpieza, Snack, Granos, Ferri): se retiran 3 días antes
-                fechaRetiro.setDate(fechaRetiro.getDate() - 3);
-            }
-
-            const nuevoProducto = {
-                id: Date.now(),
+            const objetoSupabase = {
                 codigo,
                 nombre,
                 categoria,
-                fechaPrincipal: fechaStr,
-                fechaRetiro: fechaRetiro.toISOString().split('T')[0]
+                fecha_principal: fechaStr,
+                fecha_retiro: fechaRetiro.toISOString().split('T')[0]
             };
 
-            productos.push(nuevoProducto);
-            guardarYRenderizarVencimientos();
+            const existente = productos.find(p => p.codigo === codigo);
+            if (existente) {
+                await supabaseClient.from('productos_sistema').update(objetoSupabase).eq('id', existente.id);
+            } else {
+                await supabaseClient.from('productos_sistema').insert([objetoSupabase]);
+            }
+
             e.target.reset();
             inputCodigo.value = '';
             codigoBarraGuardar.value = '';
             modoForm.textContent = "Modo: Ingreso manual o pistola";
             modoForm.style.color = '#0284c7';
-            btnSubmitText.textContent = "Guardar en el Sistema";
+            btnSubmitText.textContent = "Guardar en la Nube";
             inputCodigo.focus();
         });
 
-        // Formulario Independiente de Solicitudes de Precio
-        document.getElementById('formSolicitudPrecio').addEventListener('submit', (e) => {
+        // Guardar Solicitud de Precio en Supabase
+        document.getElementById('formSolicitudPrecio').addEventListener('submit', async (e) => {
             e.preventDefault();
             const codigo = solCodigo.value.trim();
             const cantidad = parseInt(solCantidad.value) || 1;
 
-            const nuevaSolicitud = {
-                id: Date.now(),
-                codigo,
-                cantidad
-            };
+            await supabaseClient.from('solicitudes_precio').insert([{ codigo, cantidad }]);
 
-            solicitudesPrecio.push(nuevaSolicitud);
-            guardarYRenderizarSolicitudes();
             e.target.reset();
             solCantidad.value = '1';
             solCodigo.focus();
         });
 
-        function eliminarProducto(id) {
-            productos = productos.filter(p => p.id !== id);
-            guardarYRenderizarVencimientos();
+        async function eliminarProducto(id) {
+            await supabaseClient.from('productos_sistema').delete().eq('id', id);
         }
 
-        function eliminarSolicitudPrecio(id) {
-            solicitudesPrecio = solicitudesPrecio.filter(s => s.id !== id);
-            guardarYRenderizarSolicitudes();
-        }
-
-        function guardarYRenderizarVencimientos() {
-            localStorage.setItem('productos_sistema_total', JSON.stringify(productos));
-            renderizarTablas();
-        }
-
-        function guardarYRenderizarSolicitudes() {
-            localStorage.setItem('solicitudes_precio', JSON.stringify(solicitudesPrecio));
-            renderizarSolicitudesPrecio();
+        async function eliminarSolicitudPrecio(id) {
+            await supabaseClient.from('solicitudes_precio').delete().eq('id', id);
         }
 
         function actualizarContadorSolicitudes() {
@@ -517,7 +445,6 @@
                 gridSolicitudesPrecio.innerHTML = `
                     <div style="grid-column: 1/-1; text-align: center; padding: 30px; background: #f8fafc; border-radius: 8px;">
                         <p style="color: #64748b; font-weight: 500; margin-bottom: 6px;">No hay solicitudes de precios pendientes.</p>
-                        <p style="color: #94a3b8; font-size: 12px;">Usa la cámara o escribe el código y cuántas etiquetas necesitas imprimir.</p>
                     </div>`;
                 return;
             }
@@ -567,9 +494,9 @@
                 if (!tbody) return;
 
                 let estadoBadge = '';
-                if (p.fechaRetiro < hoy) {
+                if (p.fecha_retiro < hoy) {
                     estadoBadge = `<span class="badge-status bg-red">¡URGENTE!</span>`;
-                } else if (p.fechaRetiro === hoy) {
+                } else if (p.fecha_retiro === hoy) {
                     estadoBadge = `<span class="badge-status bg-amber">Retirar Hoy</span>`;
                 } else {
                     estadoBadge = `<span class="badge-status bg-green">Vigente</span>`;
@@ -581,8 +508,8 @@
                         <div style="font-weight: 500;">${p.nombre}</div>
                         <div style="font-size: 10px; color: #6b7280;">Cod: ${p.codigo}</div>
                     </td>
-                    <td>${p.fechaPrincipal}</td>
-                    <td style="font-weight: bold; color: #2563eb;">${p.fechaRetiro}</td>
+                    <td>${p.fecha_principal}</td>
+                    <td style="font-weight: bold; color: #2563eb;">${p.fecha_retiro}</td>
                     <td>${estadoBadge}</td>
                     <td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button></td>
                 `;
@@ -590,7 +517,7 @@
             });
         }
 
-        // Cámara principal (Vencimientos)
+        // Cámaras móviles
         let camaraActiva = false;
         const btnToggleCam = document.getElementById('btnToggleCam');
         const btnCerrarCam = document.getElementById('btnCerrarCam');
@@ -605,7 +532,6 @@
         });
         btnCerrarCam.addEventListener('click', apagarCamara);
 
-        // Cámara para Solicitudes de Precio
         let camaraSolicitudActiva = false;
         const btnToggleCamSolicitud = document.getElementById('btnToggleCamSolicitud');
         const btnCerrarCamSolicitud = document.getElementById('btnCerrarCamSolicitud');
@@ -684,8 +610,8 @@
             }
         }
 
-        renderizarTablas();
-        actualizarContadorSolicitudes();
+        // Iniciar la carga de datos en tiempo real al abrir la página
+        cargarDatos();
     </script>
 </body>
 </html>
