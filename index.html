@@ -42,8 +42,8 @@
         
         .btn-camara { background: #0284c7; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: fit-content; }
         
-        #interactive.viewport, #interactiveSolicitud.viewport, #interactiveDestruccion.viewport { position: relative; width: 100%; height: 220px; border: 2px solid #3b82f6; border-radius: 8px; overflow: hidden; margin-bottom: 12px; background: #000; display: none; }
-        #interactive.viewport canvas, #interactive.viewport video, #interactiveSolicitud.viewport canvas, #interactiveSolicitud.viewport video, #interactiveDestruccion.viewport canvas, #interactiveDestruccion.viewport video { width: 100%; height: 100%; object-fit: cover; }
+        #interactive, #interactiveSolicitud, #interactiveDestruccion { position: relative; width: 100%; height: 220px; border: 2px solid #3b82f6; border-radius: 8px; overflow: hidden; margin-bottom: 12px; background: #000; display: none; }
+        #interactive canvas, #interactive video, #interactiveSolicitud canvas, #interactiveSolicitud video, #interactiveDestruccion canvas, #interactiveDestruccion video { width: 100%; height: 100%; object-fit: cover; }
 
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
         @media(min-width: 768px) { .form-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -139,7 +139,7 @@
                         <button type="button" id="btnToggleCam" class="btn-camara">📷 Usar Cámara Celular</button>
                     </div>
                 </div>
-                <div id="interactive" class="viewport"></div>
+                <div id="interactive"></div>
                 <button type="button" id="btnCerrarCam" class="hidden-section" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
 
                 <form id="productForm" class="form-grid">
@@ -222,7 +222,7 @@
                 <div class="counter-badge" id="textoContadorPrecios">Tienes 0 solicitudes pendientes</div>
                 <div class="card" style="background: #f8fafc; border: 1px solid #cbd5e1; margin-bottom: 20px;">
                     <div style="margin-bottom: 12px;"><button type="button" id="btnToggleCamSolicitud" class="btn-camara">📷 Escanear con Cámara</button></div>
-                    <div id="interactiveSolicitud" class="viewport"></div>
+                    <div id="interactiveSolicitud"></div>
                     <button type="button" id="btnCerrarCamSolicitud" class="hidden-section" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
                     <form id="formSolicitudPrecio" class="form-grid" style="grid-template-columns: 2fr 1fr auto;">
                         <div class="form-group"><label>Código de Barras</label><input type="text" id="solCodigo" required placeholder="Código..."></div>
@@ -234,19 +234,19 @@
             </div>
         </div>
 
-        <!-- SECCIÓN 3: DESTRUCCIÓN (ENCARGADOS Y CREADOR) -->
+        <!-- SECCIÓN 3: DESTRUCCIÓN (PARCIAL / PENDIENTES) -->
         <div id="seccion-destruccion" class="hidden-section">
             <div class="destruction-card">
                 <h2>Apartado de Destrucción de Productos</h2>
-                <div class="counter-badge" id="textoContadorDestruccion">Tienes 0 registros de destrucción pendientes</div>
+                <div class="counter-badge" id="textoContadorDestruccion">Tienes 0 registros pendientes</div>
                 <div class="card" style="background: #f8fafc; border: 1px solid #cbd5e1; margin-bottom: 20px;">
                     <div style="margin-bottom: 12px;"><button type="button" id="btnToggleCamDestruccion" class="btn-camara">📷 Escanear con Cámara</button></div>
-                    <div id="interactiveDestruccion" class="viewport"></div>
+                    <div id="interactiveDestruccion"></div>
                     <button type="button" id="btnCerrarCamDestruccion" class="hidden-section" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
                     <form id="formDestruccion" class="form-grid" style="grid-template-columns: 2fr 1fr auto;">
                         <div class="form-group"><label>Código de Barras</label><input type="text" id="desCodigo" required placeholder="Código..."></div>
                         <div class="form-group"><label>Cantidad a Destruir</label><input type="number" id="desCantidad" min="1" value="1" required></div>
-                        <div style="display: flex; align-items: flex-end;"><button type="submit" style="background: #dc2626; color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; height: 38px;">Registrar Destrucción</button></div>
+                        <div style="display: flex; align-items: flex-end;"><button type="submit" style="background: #dc2626; color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; height: 38px;">Dejar Pendiente</button></div>
                     </form>
                 </div>
                 <div class="barcode-grid" id="gridDestruccion"></div>
@@ -310,7 +310,6 @@
             setTimeout(() => { toastExito.style.display = 'none'; }, 3000);
         }
 
-        // VERIFICAR SESIÓN GUARDADA AL CARGAR
         window.addEventListener('DOMContentLoaded', () => {
             if (usuarioActual && rolActual) {
                 activarSesionInterfaz();
@@ -364,7 +363,6 @@
             usuarioActual = data.usuario;
             rolActual = data.rol;
 
-            // GUARDAR SESIÓN PERMANENTE
             localStorage.setItem('usuario_actual', usuarioActual);
             localStorage.setItem('rol_actual', rolActual);
 
@@ -383,6 +381,7 @@
         }
 
         function cambiarTab(tab) {
+            apagarTodasLasCamaras();
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('seccion-vencimientos').classList.add('hidden-section');
             document.getElementById('seccion-solicitudes').classList.add('hidden-section');
@@ -465,7 +464,7 @@
 
             const { error } = await supabaseClient.from('perfiles_usuarios').insert([{ usuario, clave, rol }]);
             if (error) {
-                alert("Error al crear usuario (puede que ya exista): " + error.message);
+                alert("Error al crear usuario: " + error.message);
                 return;
             }
 
@@ -537,6 +536,7 @@
             const cantidad = parseInt(document.getElementById('solCantidad').value) || 1;
             await supabaseClient.from('solicitudes_precio').insert([{ codigo, cantidad }]);
             e.target.reset();
+            solCantidad.value = '1';
             mostrarToast('¡Solicitud añadida!');
             cargarDatos();
         });
@@ -547,7 +547,8 @@
             const cantidad = parseInt(document.getElementById('desCantidad').value) || 1;
             await supabaseClient.from('productos_destruccion').insert([{ codigo, cantidad }]);
             e.target.reset();
-            mostrarToast('¡Registro de destrucción añadido!');
+            desCantidad.value = '1';
+            mostrarToast('¡Dejado pendiente para destrucción!');
             cargarDatos();
         });
 
@@ -564,7 +565,7 @@
             solicitudesPrecio.forEach(s => {
                 const div = document.createElement('div');
                 div.className = 'barcode-item';
-                div.innerHTML = `<div style="font-size: 12px; color: #2563eb; font-weight: 600;">Cantidad: ${s.cantidad}</div><div style="font-size: 11px; color: #64748b;">Cod: ${s.codigo}</div><div class="barcode-box"><svg id="sol-barcode-${s.id}"></svg></div><button onclick="eliminarSolicitudPrecio(${s.id})" style="background: #ef4444; color: white; border: none; padding: 6px; border-radius: 6px; width: 100%; cursor:pointer;">Impreso / Eliminar</button>`;
+                div.innerHTML = `<div style="font-size: 12px; color: #2563eb; font-weight: 600;">Cantidad solicitada: ${s.cantidad}</div><div style="font-size: 11px; color: #64748b;">Cod: ${s.codigo}</div><div class="barcode-box"><svg id="sol-barcode-${s.id}"></svg></div><button onclick="eliminarSolicitudPrecio(${s.id})" style="background: #ef4444; color: white; border: none; padding: 6px; border-radius: 6px; width: 100%; cursor:pointer;">Impreso / Eliminar</button>`;
                 grid.appendChild(div);
                 setTimeout(() => JsBarcode(`#sol-barcode-${s.id}`, s.codigo, { format: "CODE128", width: 1.5, height: 40, displayValue: true }), 50);
             });
@@ -575,12 +576,17 @@
             const grid = document.getElementById('gridDestruccion');
             grid.innerHTML = '';
             document.getElementById('contadorDestruccion').textContent = productosDestruccion.length;
-            document.getElementById('textoContadorDestruccion').textContent = `Tienes ${productosDestruccion.length} registros pendientes`;
+            document.getElementById('textoContadorDestruccion').textContent = `Tienes ${productosDestruccion.length} registros pendientes de destrucción`;
 
             productosDestruccion.forEach(d => {
                 const div = document.createElement('div');
                 div.className = 'barcode-item';
-                div.innerHTML = `<div style="font-size: 12px; color: #dc2626; font-weight: 600;">A destruir: ${d.cantidad}</div><div style="font-size: 11px; color: #64748b;">Cod: ${d.codigo}</div><div class="barcode-box"><svg id="des-barcode-${d.id}"></svg></div><button onclick="eliminarDestruccion(${d.id})" style="background: #10b981; color: white; border: none; padding: 6px; border-radius: 6px; width: 100%; cursor:pointer;">Destruido / Eliminar</button>`;
+                div.innerHTML = `
+                    <div style="font-size: 12px; color: #dc2626; font-weight: 600;">Cantidad pendiente: ${d.cantidad}</div>
+                    <div style="font-size: 11px; color: #64748b;">Cod: ${d.codigo}</div>
+                    <div class="barcode-box"><svg id="des-barcode-${d.id}"></svg></div>
+                    <button onclick="eliminarDestruccion(${d.id})" style="background: #10b981; color: white; border: none; padding: 6px; border-radius: 6px; width: 100%; cursor:pointer;">Completar / Destruir</button>
+                `;
                 grid.appendChild(div);
                 setTimeout(() => JsBarcode(`#des-barcode-${d.id}`, d.codigo, { format: "CODE128", width: 1.5, height: 40, displayValue: true }), 50);
             });
@@ -619,6 +625,90 @@
         }
 
         document.getElementById('inputBuscador').addEventListener('input', renderizarTablas);
+
+        // CONFIGURACIÓN DE CÁMARAS CON QUAGGA (ROBUSTA)
+        function apagarTodasLasCamaras() {
+            try { Quagga.stop(); } catch(e) {}
+            ['interactive', 'interactiveSolicitud', 'interactiveDestruccion'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.style.display = 'none';
+            });
+            ['btnCerrarCam', 'btnCerrarCamSolicitud', 'btnCerrarCamDestruccion'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.add('hidden-section');
+            });
+            const b1 = document.getElementById('btnToggleCam'); if(b1) b1.textContent = "📷 Usar Cámara Celular";
+            const b2 = document.getElementById('btnToggleCamSolicitud'); if(b2) b2.textContent = "📷 Escanear con Cámara";
+            const b3 = document.getElementById('btnToggleCamDestruccion'); if(b3) b3.textContent = "📷 Escanear con Cámara";
+        }
+
+        function iniciarEscaneoCamara(targetId, inputDestinoCallback) {
+            apagarTodasLasCamaras();
+            const viewport = document.getElementById(targetId);
+            let btnCerrarId = targetId === 'interactive' ? 'btnCerrarCam' : (targetId === 'interactiveSolicitud' ? 'btnCerrarCamSolicitud' : 'btnCerrarCamDestruccion');
+            let btnCerrar = document.getElementById(btnCerrarId);
+
+            viewport.style.display = 'block';
+            btnCerrar.classList.remove('hidden-section');
+
+            Quagga.init({
+                inputStream : {
+                    name : "Live",
+                    type : "LiveStream",
+                    target: viewport,
+                    constraints: { facingMode: "environment" }
+                },
+                decoder : { readers : ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader"] }
+            }, function(err) {
+                if (err) {
+                    alert("No se pudo iniciar la cámara: " + err);
+                    apagarTodasLasCamaras();
+                    return;
+                }
+                Quagga.start();
+            });
+
+            Quagga.onDetected(function(result) {
+                const codigo = result.codeResult.code;
+                if (codigo) {
+                    apagarTodasLasCamaras();
+                    inputDestinoCallback(codigo);
+                }
+            });
+        }
+
+        document.getElementById('btnToggleCam').addEventListener('click', () => {
+            iniciarEscaneoCamara('interactive', (codigo) => {
+                document.getElementById('codigoEscaneado').value = codigo;
+                // Disparar lógica de autocompletado de producto si aplica
+                codigoBarraGuardar.value = codigo;
+                const existente = productos.find(p => p.codigo === codigo);
+                if (existente) {
+                    document.getElementById('nombre').value = existente.nombre;
+                    document.getElementById('categoria').value = existente.categoria;
+                    document.getElementById('modoForm').textContent = `⚡ Autocompletado: ${existente.nombre}`;
+                } else {
+                    document.getElementById('modoForm').textContent = `Nuevo código: ${codigo}`;
+                }
+            });
+        });
+        document.getElementById('btnCerrarCam').addEventListener('click', apagarTodasLasCamaras);
+
+        document.getElementById('btnToggleCamSolicitud').addEventListener('click', () => {
+            iniciarEscaneoCamara('interactiveSolicitud', (codigo) => {
+                document.getElementById('solCodigo').value = codigo;
+                document.getElementById('solCantidad').focus();
+            });
+        });
+        document.getElementById('btnCerrarCamSolicitud').addEventListener('click', apagarTodasLasCamaras);
+
+        document.getElementById('btnToggleCamDestruccion').addEventListener('click', () => {
+            iniciarEscaneoCamara('interactiveDestruccion', (codigo) => {
+                document.getElementById('desCodigo').value = codigo;
+                document.getElementById('desCantidad').focus();
+            });
+        });
+        document.getElementById('btnCerrarCamDestruccion').addEventListener('click', apagarTodasLasCamaras);
     </script>
 </body>
 </html>
