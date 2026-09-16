@@ -71,11 +71,12 @@
         .btn-delete { color: #ef4444; background: none; border: none; font-weight: 500; cursor: pointer; }
         .btn-delete:hover { color: #b91c1c; text-decoration: underline; }
 
+        /* Estilos independientes para Solicitudes de Precio */
         .price-request-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .barcode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-top: 16px; }
-        .barcode-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-        .barcode-box { background: white; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; width: 100%; display: flex; justify-content: center; }
-        .counter-badge { background: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 99px; font-weight: bold; font-size: 13px; display: inline-block; margin-bottom: 12px; }
+        .barcode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 16px; }
+        .barcode-item { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .barcode-box { background: white; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; display: flex; justify-content: center; }
+        .counter-badge { background: #dbeafe; color: #1e40af; padding: 6px 16px; border-radius: 99px; font-weight: bold; font-size: 13px; display: inline-block; margin-bottom: 12px; }
         .hidden-section { display: none; }
     </style>
 </head>
@@ -91,7 +92,7 @@
         <header>
             <div>
                 <h1>Control y Solicitudes</h1>
-                <p>Gestión de vencimientos y apartado de solicitudes de precio.</p>
+                <p>Gestión de vencimientos y apartado independiente de solicitudes de precio.</p>
             </div>
             <div class="tabs">
                 <button class="tab-btn active" onclick="cambiarTab('vencimientos')">📦 Control de Vencimientos</button>
@@ -146,10 +147,6 @@
                     <div class="form-group">
                         <label>Fecha de Elaboración (Opcional)</label>
                         <input type="date" id="fechaElaboracion">
-                    </div>
-                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px; margin-top: 10px;">
-                        <input type="checkbox" id="requierePrecio" style="width: auto;">
-                        <label for="requierePrecio" style="font-weight: bold; color: #d97706;">Marcar si requiere solicitar etiqueta de precio</label>
                     </div>
                     <button type="submit" class="btn-submit" id="btnSubmitText">Guardar Producto en el Sistema</button>
                 </form>
@@ -235,27 +232,45 @@
             </div>
         </div>
 
-        <!-- SECCIÓN 2: SOLICITUDES DE PRECIO -->
+        <!-- SECCIÓN 2: SOLICITUDES DE PRECIO INDEPENDIENTE -->
         <div id="seccion-solicitudes" class="hidden-section">
             <div class="price-request-card">
                 <h2>Apartado de Solicitudes de Precio</h2>
-                <div class="counter-badge" id="textoContadorPrecios">Tienes 0 precios pendientes por solicitar</div>
-                <p style="color: #64748b; font-size: 13px; margin-bottom: 16px;">Aquí aparecen los códigos de barras de los productos marcados. Pasa la pistola sobre el código de barras generado para resolverlo.</p>
+                <div class="counter-badge" id="textoContadorPrecios">Tienes 0 solicitudes pendientes</div>
+                <p style="color: #64748b; font-size: 13px; margin-bottom: 16px;">Escanea o escribe el código de barras, indica cuántas etiquetas necesitas y se generará la tarjeta visual para los impresores. Una vez impresas, elimínalas para mantener la lista limpia.</p>
                 
-                <div class="tools-grid" style="margin-bottom: 20px;">
-                    <div class="scan-box" style="background: #fef3c7; border-color: #f59e0b;">
-                        <label style="font-weight: 600; color: #b45309;">Escanear Código de Barras para Resolver</label>
-                        <input type="text" id="barraEscaneada" placeholder="Pasa la pistola sobre la barra o escribe...">
-                    </div>
+                <!-- Formulario de Solicitud Independiente -->
+                <div class="card" style="background: #f8fafc; border: 1px solid #cbd5e1; margin-bottom: 20px;">
+                    <form id="formSolicitudPrecio" class="form-grid" style="grid-template-columns: 1fr 1fr 1fr auto;">
+                        <div class="form-group">
+                            <label>Código de Barras</label>
+                            <input type="text" id="solCodigo" required placeholder="Escanea o escribe código...">
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre del Producto</label>
+                            <input type="text" id="solNombre" required placeholder="Nombre del producto...">
+                        </div>
+                        <div class="form-group">
+                            <label>¿Cuántas etiquetas necesitas?</label>
+                            <input type="number" id="solCantidad" min="1" value="1" required>
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <button type="submit" style="background: #2563eb; color: white; border: none; padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; height: 38px;">Generar Solicitud</button>
+                        </div>
+                    </form>
                 </div>
 
-                <div class="barcode-grid" id="gridBarraPrecios"></div>
+                <!-- Lista de Códigos de Barras Generados para Impresión -->
+                <div class="barcode-grid" id="gridSolicitudesPrecio">
+                    <!-- Aquí se cargan dinámicamente -->
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         let productos = JSON.parse(localStorage.getItem('productos_retiro')) || [];
+        let solicitudesPrecio = JSON.parse(localStorage.getItem('solicitudes_precio')) || [];
 
         const inputCodigo = document.getElementById('codigoEscaneado');
         const inputBuscador = document.getElementById('inputBuscador');
@@ -265,15 +280,16 @@
         const labelFecha = document.getElementById('labelFecha');
         const fechaPrincipalInput = document.getElementById('fechaPrincipal');
         const fechaElaboracionInput = document.getElementById('fechaElaboracion');
-        const requierePrecioCheckbox = document.getElementById('requierePrecio');
         const modoForm = document.getElementById('modoForm');
         const btnSubmitText = document.getElementById('btnSubmitText');
         const alertaHorario = document.getElementById('alertaHorario');
         
-        const barraEscaneadaInput = document.getElementById('barraEscaneada');
+        const solCodigo = document.getElementById('solCodigo');
+        const solNombre = document.getElementById('solNombre');
+        const solCantidad = document.getElementById('solCantidad');
         const contadorSolicitudes = document.getElementById('contadorSolicitudes');
         const textoContadorPrecios = document.getElementById('textoContadorPrecios');
-        const gridBarraPrecios = document.getElementById('gridBarraPrecios');
+        const gridSolicitudesPrecio = document.getElementById('gridSolicitudesPrecio');
 
         function cambiarTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -323,7 +339,6 @@
             if (existente) {
                 inputNombre.value = existente.nombre;
                 categoriaSelect.value = existente.categoria;
-                requierePrecioCheckbox.checked = existente.requierePrecio || false;
                 modoForm.textContent = `Actualizando lote para: ${existente.nombre} (Cod: ${codigo})`;
                 modoForm.style.color = '#f59e0b';
                 btnSubmitText.textContent = "Registrar Nuevo Lote / Fecha";
@@ -331,13 +346,13 @@
                 modoForm.textContent = `Registrando nuevo código: ${codigo}`;
                 modoForm.style.color = '#10b981';
                 inputNombre.value = '';
-                requierePrecioCheckbox.checked = false;
                 btnSubmitText.textContent = "Guardar Producto en el Sistema";
             }
         }
 
         inputBuscador.addEventListener('input', renderizarTablas);
 
+        // Formulario de Vencimientos
         document.getElementById('productForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const codigo = codigoBarraGuardar.value || inputCodigo.value.trim() || ('CODE-' + Math.floor(100000 + Math.random() * 900000));
@@ -345,7 +360,6 @@
             const categoria = categoriaSelect.value;
             const fechaStr = fechaPrincipalInput.value;
             const elaboracionStr = fechaElaboracionInput.value || 'N/A';
-            const requierePrecio = requierePrecioCheckbox.checked;
 
             let fechaRetiro = new Date(fechaStr + 'T00:00:00');
             if (categoria === 'legumbre_sin_cad') fechaRetiro.setDate(fechaRetiro.getDate() + 8);
@@ -360,12 +374,11 @@
                 categoria,
                 fechaPrincipal: fechaStr,
                 elaboracion: elaboracionStr,
-                requierePrecio,
                 fechaRetiro: fechaRetiro.toISOString().split('T')[0]
             };
 
             productos.push(nuevoProducto);
-            guardarYRenderizar();
+            guardarYRenderizarVencimientos();
             e.target.reset();
             inputCodigo.value = '';
             codigoBarraGuardar.value = '';
@@ -375,61 +388,82 @@
             inputCodigo.focus();
         });
 
+        // Formulario Independiente de Solicitudes de Precio
+        document.getElementById('formSolicitudPrecio').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const codigo = solCodigo.value.trim();
+            const nombre = solNombre.value.trim();
+            const cantidad = parseInt(solCantidad.value) || 1;
+
+            const nuevaSolicitud = {
+                id: Date.now(),
+                codigo,
+                nombre,
+                cantidad
+            };
+
+            solicitudesPrecio.push(nuevaSolicitud);
+            guardarYRenderizarSolicitudes();
+            e.target.reset();
+            solCantidad.value = '1';
+            solCodigo.focus();
+        });
+
         function eliminarProducto(id) {
             productos = productos.filter(p => p.id !== id);
-            guardarYRenderizar();
+            guardarYRenderizarVencimientos();
         }
 
-        function marcarPrecioSolicitado(id) {
-            const prod = productos.find(p => p.id === id);
-            if (prod) {
-                prod.requierePrecio = false;
-                guardarYRenderizar();
-                renderizarSolicitudesPrecio();
-            }
+        function eliminarSolicitudPrecio(id) {
+            solicitudesPrecio = solicitudesPrecio.filter(s => s.id !== id);
+            guardarYRenderizarSolicitudes();
         }
 
-        function guardarYRenderizar() {
+        function guardarYRenderizarVencimientos() {
             localStorage.setItem('productos_retiro', JSON.stringify(productos));
             renderizarTablas();
-            actualizarContadorSolicitudes();
+        }
+
+        function guardarYRenderizarSolicitudes() {
+            localStorage.setItem('solicitudes_precio', JSON.stringify(solicitudesPrecio));
+            renderizarSolicitudesPrecio();
         }
 
         function actualizarContadorSolicitudes() {
-            const pendientes = productos.filter(p => p.requierePrecio).length;
-            contadorSolicitudes.textContent = pendientes;
-            textoContadorPrecios.textContent = `Tienes ${pendientes} precios pendientes por solicitar`;
+            contadorSolicitudes.textContent = solicitudesPrecio.length;
+            textoContadorPrecios.textContent = `Tienes ${solicitudesPrecio.length} solicitudes pendientes`;
         }
 
         function renderizarSolicitudesPrecio() {
-            gridBarraPrecios.innerHTML = '';
-            const pendientes = productos.filter(p => p.requierePrecio);
+            gridSolicitudesPrecio.innerHTML = '';
+            actualizarContadorSolicitudes();
 
-            if (pendientes.length === 0) {
-                gridBarraPrecios.innerHTML = `
+            if (solicitudesPrecio.length === 0) {
+                gridSolicitudesPrecio.innerHTML = `
                     <div style="grid-column: 1/-1; text-align: center; padding: 30px; background: #f8fafc; border-radius: 8px;">
                         <p style="color: #64748b; font-weight: 500; margin-bottom: 6px;">No hay solicitudes de precios pendientes.</p>
-                        <p style="color: #94a3b8; font-size: 12px;">Ve a la pestaña de "Control de Vencimientos" y marca la casilla de solicitar etiqueta de precio al registrar un producto.</p>
+                        <p style="color: #94a3b8; font-size: 12px;">Usa el formulario de arriba para agregar códigos y cuántas etiquetas necesitas imprimir.</p>
                     </div>`;
                 return;
             }
 
-            pendientes.forEach(p => {
+            solicitudesPrecio.forEach(s => {
                 const div = document.createElement('div');
                 div.className = 'barcode-item';
                 div.innerHTML = `
-                    <div style="font-weight: bold; font-size: 13px; color: #1e293b;">${p.nombre}</div>
-                    <div style="font-size: 11px; color: #64748b;">Cod: ${p.codigo}</div>
+                    <div style="font-weight: bold; font-size: 14px; color: #1e293b;">${s.nombre}</div>
+                    <div style="font-size: 12px; color: #2563eb; font-weight: 600;">Cantidad a imprimir: ${s.cantidad} etiqueta(s)</div>
+                    <div style="font-size: 11px; color: #64748b;">Cod: ${s.codigo}</div>
                     <div class="barcode-box">
-                        <svg id="barcode-${p.id}"></svg>
+                        <svg id="sol-barcode-${s.id}"></svg>
                     </div>
-                    <button onclick="marcarPrecioSolicitado(${p.id})" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; width: 100%;">Solicitado / Resolver</button>
+                    <button onclick="eliminarSolicitudPrecio(${s.id})" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; width: 100%;">Impreso / Eliminar de la lista</button>
                 `;
-                gridBarraPrecios.appendChild(div);
+                gridSolicitudesPrecio.appendChild(div);
 
                 setTimeout(() => {
                     try {
-                        JsBarcode(`#barcode-${p.id}`, p.codigo, {
+                        JsBarcode(`#sol-barcode-${s.id}`, s.codigo, {
                             format: "CODE128",
                             lineColor: "#000",
                             width: 1.5,
@@ -442,16 +476,6 @@
                 }, 50);
             });
         }
-
-        barraEscaneadaInput.addEventListener('input', (e) => {
-            const codigo = e.target.value.trim();
-            const prod = productos.find(p => p.codigo === codigo && p.requierePrecio);
-            if (prod) {
-                alert(`¡Código de barras escaneado con éxito!\nProducto: ${prod.nombre}\nMarcando precio como solicitado.`);
-                marcarPrecioSolicitado(prod.id);
-                barraEscaneadaInput.value = '';
-            }
-        });
 
         function renderizarTablas() {
             ['legumbre_sin_cad', 'legumbre_con_cad', 'frio', 'percha'].forEach(cat => {
@@ -477,14 +501,11 @@
                     estadoBadge = `<span class="badge-status bg-green">Vigente</span>`;
                 }
 
-                const etiquetaPrecio = p.requierePrecio ? `<span style="background: #fef3c7; color: #b45309; font-size: 9px; padding: 2px 6px; border-radius: 4px; display:inline-block; margin-top:2px;">🏷️ Pide Precio</span>` : '';
-
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>
                         <div style="font-weight: 500;">${p.nombre}</div>
                         <div style="font-size: 10px; color: #6b7280;">Cod: ${p.codigo}</div>
-                        ${etiquetaPrecio}
                     </td>
                     <td>${p.fechaPrincipal}</td>
                     <td style="font-weight: bold; color: #2563eb;">${p.fechaRetiro}</td>
@@ -493,7 +514,6 @@
                 `;
                 tbody.appendChild(tr);
             });
-            actualizarContadorSolicitudes();
         }
 
         let camaraActiva = false;
@@ -542,6 +562,7 @@
         }
 
         renderizarTablas();
+        actualizarContadorSolicitudes();
     </script>
 </body>
 </html>
