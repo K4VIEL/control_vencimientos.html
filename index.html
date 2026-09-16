@@ -234,7 +234,7 @@
             </div>
         </div>
 
-        <!-- SECCIÓN 3: DESTRUCCIÓN (CON NOMBRE, CANTIDAD, USUARIO Y HISTORIAL) -->
+        <!-- SECCIÓN 3: DESTRUCCIÓN PARCIAL Y PENDIENTES -->
         <div id="seccion-destruccion" class="hidden-section">
             <div class="destruction-card">
                 <h2>Apartado de Destrucción de Productos</h2>
@@ -258,7 +258,7 @@
                 <h3 style="margin-top: 32px; margin-bottom: 12px; font-size: 15px; color: #047857;">📜 Historial de Destrucciones Realizadas</h3>
                 <div class="table-responsive">
                     <table>
-                        <thead><tr><th>Producto / Código</th><th>Cantidad</th><th>Encargado</th><th>Fecha y Hora</th></tr></thead>
+                        <thead><tr><th>Producto / Código</th><th>Cantidad Destruida</th><th>Encargado</th><th>Fecha y Hora</th></tr></thead>
                         <tbody id="lista-historial-destruccion"></tbody>
                     </table>
                 </div>
@@ -553,7 +553,7 @@
             const cantidad = parseInt(document.getElementById('solCantidad').value) || 1;
             await supabaseClient.from('solicitudes_precio').insert([{ codigo, cantidad }]);
             e.target.reset();
-            solCantidad.value = '1';
+            document.getElementById('solCantidad').value = '1';
             mostrarToast('¡Solicitud añadida!');
             cargarDatos();
         });
@@ -568,11 +568,12 @@
                 codigo: codigo,
                 nombre: nombreProd,
                 cantidad: cantidad,
+                cantidad_original: cantidad,
                 usuario: usuarioActual || 'desconocido'
             }]);
 
             e.target.reset();
-            desCantidad.value = '1';
+            document.getElementById('desCantidad').value = '1';
             mostrarToast('¡Dejado pendiente para destrucción!');
             cargarDatos();
         });
@@ -580,18 +581,43 @@
         async function eliminarProducto(id) { await supabaseClient.from('productos_sistema').delete().eq('id', id); cargarDatos(); }
         async function eliminarSolicitudPrecio(id) { await supabaseClient.from('solicitudes_precio').delete().eq('id', id); cargarDatos(); }
         
-        async function completarDestruccion(id, codigo, nombreProd, cantidad) {
-            // Guardar en el historial con fecha, hora, nombre y usuario actual
+        // FUNCIÓN DE DESTRUCCIÓN PARCIAL / PENDIENTE
+        async function procesarDestruccionParcial(id, codigo, nombreProd, cantidadActual) {
+            let inputCantidad = prompt(`¿Cuántas unidades deseas destruir de este lote? (Pendientes: ${cantidadActual})`, cantidadActual);
+            if (inputCantidad === null) return;
+            
+            let aDestruir = parseInt(inputCantidad);
+            if (isNaN(aDestruir) || aDestruir <= 0) {
+                alert("Cantidad inválida.");
+                return;
+            }
+
+            if (aDestruir > cantidadActual) {
+                alert("No puedes destruir más de la cantidad pendiente.");
+                return;
+            }
+
+            // 1. Guardar en el Historial solo lo que se destruyó ahora
             await supabaseClient.from('historial_destruccion').insert([{
                 codigo: codigo,
                 nombre: nombreProd,
-                cantidad: cantidad,
+                cantidad: aDestruir,
                 usuario: usuarioActual || 'desconocido'
             }]);
 
-            // Eliminar de pendientes
-            await supabaseClient.from('productos_destruccion').delete().eq('id', id);
-            mostrarToast('¡Destrucción completada y registrada en el historial!');
+            // 2. Calcular restante
+            let restante = cantidadActual - aDestruir;
+
+            if (restante > 0) {
+                // Actualizar el registro pendiente con lo que sobra
+                await supabaseClient.from('productos_destruccion').update({ cantidad: restante }).eq('id', id);
+                mostrarToast(`¡Se destruyeron ${aDestruir} unidades! Quedan ${restante} pendientes.`);
+            } else {
+                // Si ya no queda nada, eliminar el registro pendiente
+                await supabaseClient.from('productos_destruccion').delete().eq('id', id);
+                mostrarToast(`¡Lote totalmente destruido y registrado!`);
+            }
+
             cargarDatos();
         }
 
@@ -627,7 +653,7 @@
                     <div style="font-size: 12px; color: #dc2626; font-weight: 600;">Cantidad pendiente: ${d.cantidad}</div>
                     <div style="font-size: 11px; color: #64748b;">Cod: ${d.codigo} | Creado por: <b>${d.usuario || 'N/A'}</b></div>
                     <div class="barcode-box"><svg id="des-barcode-${d.id}"></svg></div>
-                    <button onclick="completarDestruccion(${d.id}, '${d.codigo}', '${d.nombre || ''}', ${d.cantidad})" style="background: #10b981; color: white; border: none; padding: 6px; border-radius: 6px; width: 100%; cursor:pointer;">Completar / Destruir</button>
+                    <button onclick="procesarDestruccionParcial(${d.id}, '${d.codigo}', '${d.nombre || ''}', ${d.cantidad})" style="background: #10b981; color: white; border: none; padding: 6px; border-radius: 6px; width: 100%; cursor:pointer;">Destruir Parcial / Total</button>
                 `;
                 grid.appendChild(div);
                 setTimeout(() => JsBarcode(`#des-barcode-${d.id}`, d.codigo, { format: "CODE128", width: 1.5, height: 40, displayValue: true }), 50);
@@ -765,8 +791,6 @@
         document.getElementById('btnToggleCamDestruccion').addEventListener('click', () => {
             iniciarEscaneoCamara('interactiveDestruccion', (codigo) => {
                 document.getElementById('desCodigo').value = codigo;
-                
-                // Si el producto ya está registrado en el sistema, autocompleta el nombre
                 const encontrado = productos.find(p => p.codigo === codigo);
                 if (encontrado) {
                     document.getElementById('desNombre').value = encontrado.nombre;
