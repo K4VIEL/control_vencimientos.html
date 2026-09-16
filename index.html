@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Retiro de Productos - Vencimientos</title>
+    <title>Control de Retiro y Solicitudes de Precio</title>
     <!-- Librería para leer códigos de barras con la cámara -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <!-- Librería para generar códigos de barras visuales -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
         body { background-color: #f3f4f6; color: #1f2937; padding: 16px; }
@@ -18,8 +20,11 @@
         @media(min-width: 768px) { header { flex-direction: row; justify-content: space-between; align-items: center; } }
         h1 { font-size: 20px; font-weight: bold; color: #111827; }
         p { font-size: 13px; color: #6b7280; }
-        .badge { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 500; display: inline-block; }
         
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { background: #e5e7eb; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: #4b5563; }
+        .tab-btn.active { background: #2563eb; color: white; }
+
         .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; }
         .card h2 { font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
         
@@ -65,12 +70,20 @@
         .bg-green { background: #d1fae5; color: #047857; }
         .btn-delete { color: #ef4444; background: none; border: none; font-weight: 500; cursor: pointer; }
         .btn-delete:hover { color: #b91c1c; text-decoration: underline; }
+
+        /* Estilos para el apartado de Solicitudes de Precio con Código de Barras */
+        .price-request-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .barcode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-top: 16px; }
+        .barcode-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .barcode-box { background: white; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; width: 100%; display: flex; justify-content: center; }
+        .counter-badge { background: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 99px; font-weight: bold; font-size: 13px; display: inline-block; margin-bottom: 12px; }
+        .hidden-section { display: none; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- Notificación Flotante por Horario (6:30 PM a 9:00 PM) -->
+        <!-- Notificación Flotante por Horario -->
         <div id="alertaHorario">
             🚨 ¡HORARIO DE RETIRO ACTIVO (6:30 PM - 9:00 PM)! Tienes productos que deben retirarse de perchas, vitrinas, islas o frío.
         </div>
@@ -78,141 +91,168 @@
         <!-- Encabezado -->
         <header>
             <div>
-                <h1>Control de Retiro de Productos</h1>
-                <p>Escáner rápido, buscador y alerta diaria programada.</p>
+                <h1>Control y Solicitudes</h1>
+                <p>Gestión de vencimientos y apartado de solicitudes de precio.</p>
             </div>
-            <div class="badge">
-                Regla Activa: Legumbres (8d / 2d) | Frío (5d) | Perchas (3d)
+            <div class="tabs">
+                <button class="tab-btn active" onclick="cambiarTab('vencimientos')">📦 Control de Vencimientos</button>
+                <button class="tab-btn" onclick="cambiarTab('solicitudes')">🏷️ Solicitudes de Precio (<span id="contadorSolicitudes">0</span>)</button>
             </div>
         </header>
 
-        <!-- Controles Principales -->
-        <div class="card">
-            <h2>
-                <span>Operaciones de Control</span>
-                <span id="modoForm" style="font-size: 12px; color: #0284c7; font-weight: normal;">Modo: Ingreso manual o pistola</span>
-            </h2>
+        <!-- SECCIÓN 1: VENCIMIENTOS -->
+        <div id="seccion-vencimientos">
+            <div class="card">
+                <h2>
+                    <span>Operaciones de Control</span>
+                    <span id="modoForm" style="font-size: 12px; color: #0284c7; font-weight: normal;">Modo: Ingreso manual o pistola</span>
+                </h2>
 
-            <div class="tools-grid">
-                <div class="scan-box">
-                    <label style="font-weight: 600; color: #1e40af;">Escanear Código de Barras (Pistola o Teclado)</label>
-                    <input type="text" id="codigoEscaneado" placeholder="Pasa la pistola o escribe aquí..." autofocus>
-                    <button type="button" id="btnToggleCam" class="btn-camara">📷 Usar Cámara Celular</button>
+                <div class="tools-grid">
+                    <div class="scan-box">
+                        <label style="font-weight: 600; color: #1e40af;">Escanear Código de Barras</label>
+                        <input type="text" id="codigoEscaneado" placeholder="Pasa la pistola o escribe aquí..." autofocus>
+                        <button type="button" id="btnToggleCam" class="btn-camara">📷 Usar Cámara Celular</button>
+                    </div>
+
+                    <div class="search-box">
+                        <label style="font-weight: 600; color: #047857;">Buscar Producto en el Sistema</label>
+                        <input type="text" id="inputBuscador" placeholder="Escribe el nombre o código...">
+                    </div>
                 </div>
 
-                <div class="search-box">
-                    <label style="font-weight: 600; color: #047857;">Buscar Producto en el Sistema</label>
-                    <input type="text" id="inputBuscador" placeholder="Escribe el nombre o código para ver fecha...">
-                    <span style="font-size: 11px; color: #065f46;">Filtra automáticamente las tablas de abajo.</span>
-                </div>
+                <div id="interactive" class="viewport"></div>
+                <button type="button" id="btnCerrarCam" class="hidden" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
+
+                <!-- Formulario -->
+                <form id="productForm" class="form-grid">
+                    <input type="hidden" id="codigoBarraGuardar">
+                    <div class="form-group">
+                        <label>Nombre del Producto</label>
+                        <input type="text" id="nombre" required placeholder="Ej: Espinaca empacada, Yogurt...">
+                    </div>
+                    <div class="form-group">
+                        <label>Categoría / Regla</label>
+                        <select id="categoria" required>
+                            <option value="legumbre_sin_cad">Legumbre (Sin caducidad - Retiro 8 días)</option>
+                            <option value="legumbre_con_cad">Legumbre Empacada (Retiro 2 días antes)</option>
+                            <option value="frio">Producto de Frío (Retiro 5 días antes)</option>
+                            <option value="percha">Producto de Perchas/Islas/Vitrinas (Retiro 3 días antes)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label id="labelFecha">Fecha de Caducidad (o Elaboración si es legumbre)</label>
+                        <input type="date" id="fechaPrincipal" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha de Elaboración (Opcional)</label>
+                        <input type="date" id="fechaElaboracion">
+                    </div>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px; margin-top: 10px;">
+                        <input type="checkbox" id="requierePrecio" style="width: auto;">
+                        <label for="requierePrecio" style="font-weight: bold; color: #d97706;">Marcar si requiere solicitar etiqueta de precio</label>
+                    </div>
+                    <button type="submit" class="btn-submit" id="btnSubmitText">Guardar Producto en el Sistema</button>
+                </form>
             </div>
 
-            <div id="interactive" class="viewport"></div>
-            <button type="button" id="btnCerrarCam" class="hidden" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
+            <!-- Tablas de Secciones -->
+            <div class="grid-sections">
+                <div class="section-card border-amber">
+                    <h3>Legumbres (Sin fecha de caducidad)</h3>
+                    <p>Criterio: Se retiran a los 8 días de la elaboración.</p>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Código / Producto</th>
+                                    <th>Elaboración</th>
+                                    <th>Fecha Retiro</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-legumbre_sin_cad"></tbody>
+                        </table>
+                    </div>
+                </div>
 
-            <!-- Formulario -->
-            <form id="productForm" class="form-grid">
-                <input type="hidden" id="codigoBarraGuardar">
-                <div class="form-group">
-                    <label>Nombre del Producto</label>
-                    <input type="text" id="nombre" required placeholder="Ej: Espinaca empacada, Yogurt...">
+                <div class="section-card border-emerald">
+                    <h3>Legumbres Empacadas</h3>
+                    <p>Criterio: Se retiran 2 días antes de su vencimiento.</p>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Código / Producto</th>
+                                    <th>Caducidad</th>
+                                    <th>Fecha Retiro</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-legumbre_con_cad"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Categoría / Regla</label>
-                    <select id="categoria" required>
-                        <option value="legumbre_sin_cad">Legumbre (Sin caducidad - Retiro 8 días desde elaboración)</option>
-                        <option value="legumbre_con_cad">Legumbre Empacada (Retiro 2 días antes de caducidad)</option>
-                        <option value="frio">Producto de Frío (Retiro 5 días antes de caducidad)</option>
-                        <option value="percha">Producto de Perchas/Islas/Vitrinas (Retiro 3 días antes de caducidad)</option>
-                    </select>
+
+                <div class="section-card border-sky">
+                    <h3>Productos de Frío</h3>
+                    <p>Criterio: Se retiran 5 días antes de su vencimiento.</p>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Código / Producto</th>
+                                    <th>Caducidad</th>
+                                    <th>Fecha Retiro</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-frio"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label id="labelFecha">Fecha de Caducidad (o Elaboración si es legumbre)</label>
-                    <input type="date" id="fechaPrincipal" required>
+
+                <div class="section-card border-purple">
+                    <h3>Productos de Perchas, Vitrinas e Islas</h3>
+                    <p>Criterio: Se retiran 3 días antes de su vencimiento.</p>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Código / Producto</th>
+                                    <th>Caducidad</th>
+                                    <th>Fecha Retiro</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-percha"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Fecha de Elaboración (Opcional)</label>
-                    <input type="date" id="fechaElaboracion">
-                </div>
-                <button type="submit" class="btn-submit" id="btnSubmitText">Guardar Producto en el Sistema</button>
-            </form>
+            </div>
         </div>
 
-        <!-- Secciones de Resultados -->
-        <div class="grid-sections">
-            <div class="section-card border-amber">
-                <h3>Legumbres (Sin fecha de caducidad)</h3>
-                <p>Criterio: Se retiran a los 8 días de la elaboración.</p>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Código / Producto</th>
-                                <th>Elaboración</th>
-                                <th>Fecha Retiro</th>
-                                <th>Estado</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="lista-legumbre_sin_cad"></tbody>
-                    </table>
+        <!-- SECCIÓN 2: SOLICITUDES DE PRECIO (CÓDIGOS DE BARRAS) -->
+        <div id="seccion-solicitudes" class="hidden-section">
+            <div class="price-request-card">
+                <h2>Apartado de Solicitudes de Precio</h2>
+                <div class="counter-badge" id="textoContadorPrecios">Tienes 0 precios pendientes por solicitar</div>
+                <p style="color: #64748b; font-size: 13px; margin-bottom: 16px;">Aquí aparecen generados los códigos de barras de los productos que necesitan etiqueta de precio para poder escanearlos o visualizarlos.</p>
+                
+                <div class="tools-grid" style="margin-bottom: 20px;">
+                    <div class="scan-box" style="background: #fef3c7; border-color: #f59e0b;">
+                        <label style="font-weight: 600; color: #b45309;">Escanear Código de Barras para Resolver</label>
+                        <input type="text" id="barraEscaneada" placeholder="Pasa la pistola sobre la barra o escribe...">
+                    </div>
                 </div>
-            </div>
 
-            <div class="section-card border-emerald">
-                <h3>Legumbres Empacadas</h3>
-                <p>Criterio: Se retiran 2 días antes de su vencimiento.</p>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Código / Producto</th>
-                                <th>Caducidad</th>
-                                <th>Fecha Retiro</th>
-                                <th>Estado</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="lista-legumbre_con_cad"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="section-card border-sky">
-                <h3>Productos de Frío</h3>
-                <p>Criterio: Se retiran 5 días antes de su vencimiento.</p>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Código / Producto</th>
-                                <th>Caducidad</th>
-                                <th>Fecha Retiro</th>
-                                <th>Estado</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="lista-frio"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="section-card border-purple">
-                <h3>Productos de Perchas, Vitrinas e Islas</h3>
-                <p>Criterio: Se retiran 3 días antes de su vencimiento.</p>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Código / Producto</th>
-                                <th>Caducidad</th>
-                                <th>Fecha Retiro</th>
-                                <th>Estado</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="lista-percha"></tbody>
-                    </table>
+                <!-- Lista de Códigos de Barras Generados -->
+                <div class="barcode-grid" id="gridBarraPrecios">
+                    <!-- Aquí se cargan dinámicamente -->
                 </div>
             </div>
         </div>
@@ -229,16 +269,35 @@
         const labelFecha = document.getElementById('labelFecha');
         const fechaPrincipalInput = document.getElementById('fechaPrincipal');
         const fechaElaboracionInput = document.getElementById('fechaElaboracion');
+        const requierePrecioCheckbox = document.getElementById('requierePrecio');
         const modoForm = document.getElementById('modoForm');
         const btnSubmitText = document.getElementById('btnSubmitText');
         const alertaHorario = document.getElementById('alertaHorario');
+        
+        const barraEscaneadaInput = document.getElementById('barraEscaneada');
+        const contadorSolicitudes = document.getElementById('contadorSolicitudes');
+        const textoContadorPrecios = document.getElementById('textoContadorPrecios');
+        const gridBarraPrecios = document.getElementById('gridBarraPrecios');
+
+        function cambiarTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            if (tab === 'vencimientos') {
+                document.getElementById('seccion-vencimientos').classList.remove('hidden-section');
+                document.getElementById('seccion-solicitudes').classList.add('hidden-section');
+                document.querySelector('.tabs button:nth-child(1)').classList.add('active');
+            } else {
+                document.getElementById('seccion-vencimientos').classList.add('hidden-section');
+                document.getElementById('seccion-solicitudes').classList.remove('hidden-section');
+                document.querySelector('.tabs button:nth-child(2)').classList.add('active');
+                renderizarSolicitudesPrecio();
+            }
+        }
 
         function verificarHorarioNotificacion() {
             const ahora = new Date();
             const horas = ahora.getHours();
             const minutos = ahora.getMinutes();
             const tiempoMinutos = horas * 60 + minutos;
-
             if (tiempoMinutos >= 1110 && tiempoMinutos <= 1260) {
                 alertaHorario.style.display = 'block';
             } else {
@@ -256,22 +315,19 @@
             }
         });
 
-        // Detección automática al escribir o pasar la pistola (sin requerir Enter obligatorio)
         inputCodigo.addEventListener('input', (e) => {
             const codigo = e.target.value.trim();
-            if (codigo.length >= 3) { // Comienza a buscar cuando hay al menos 3 caracteres
-                procesarCodigoLeido(codigo);
-            }
+            if (codigo.length >= 3) procesarCodigoLeido(codigo);
         });
 
         function procesarCodigoLeido(codigo) {
             if (!codigo) return;
             const existente = productos.find(p => p.codigo === codigo);
-
             codigoBarraGuardar.value = codigo;
             if (existente) {
                 inputNombre.value = existente.nombre;
                 categoriaSelect.value = existente.categoria;
+                requierePrecioCheckbox.checked = existente.requierePrecio || false;
                 modoForm.textContent = `Actualizando lote para: ${existente.nombre} (Cod: ${codigo})`;
                 modoForm.style.color = '#f59e0b';
                 btnSubmitText.textContent = "Registrar Nuevo Lote / Fecha";
@@ -279,6 +335,7 @@
                 modoForm.textContent = `Registrando nuevo código: ${codigo}`;
                 modoForm.style.color = '#10b981';
                 inputNombre.value = '';
+                requierePrecioCheckbox.checked = false;
                 btnSubmitText.textContent = "Guardar Producto en el Sistema";
             }
         }
@@ -287,24 +344,18 @@
 
         document.getElementById('productForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            
-            const codigo = codigoBarraGuardar.value || inputCodigo.value.trim() || ('SIN-CODIGO-' + Date.now());
+            const codigo = codigoBarraGuardar.value || inputCodigo.value.trim() || ('CODE-' + Math.floor(100000 + Math.random() * 900000));
             const nombre = inputNombre.value.trim();
             const categoria = categoriaSelect.value;
             const fechaStr = fechaPrincipalInput.value;
             const elaboracionStr = fechaElaboracionInput.value || 'N/A';
+            const requierePrecio = requierePrecioCheckbox.checked;
 
             let fechaRetiro = new Date(fechaStr + 'T00:00:00');
-
-            if (categoria === 'legumbre_sin_cad') {
-                fechaRetiro.setDate(fechaRetiro.getDate() + 8);
-            } else if (categoria === 'legumbre_con_cad') {
-                fechaRetiro.setDate(fechaRetiro.getDate() - 2);
-            } else if (categoria === 'frio') {
-                fechaRetiro.setDate(fechaRetiro.getDate() - 5);
-            } else if (categoria === 'percha') {
-                fechaRetiro.setDate(fechaRetiro.getDate() - 3);
-            }
+            if (categoria === 'legumbre_sin_cad') fechaRetiro.setDate(fechaRetiro.getDate() + 8);
+            else if (categoria === 'legumbre_con_cad') fechaRetiro.setDate(fechaRetiro.getDate() - 2);
+            else if (categoria === 'frio') fechaRetiro.setDate(fechaRetiro.getDate() - 5);
+            else if (categoria === 'percha') fechaRetiro.setDate(fechaRetiro.getDate() - 3);
 
             const nuevoProducto = {
                 id: Date.now(),
@@ -313,6 +364,7 @@
                 categoria,
                 fechaPrincipal: fechaStr,
                 elaboracion: elaboracionStr,
+                requierePrecio,
                 fechaRetiro: fechaRetiro.toISOString().split('T')[0]
             };
 
@@ -332,10 +384,75 @@
             guardarYRenderizar();
         }
 
+        function marcarPrecioSolicitado(id) {
+            const prod = productos.find(p => p.id === id);
+            if (prod) {
+                prod.requierePrecio = false;
+                guardarYRenderizar();
+                renderizarSolicitudesPrecio();
+            }
+        }
+
         function guardarYRenderizar() {
             localStorage.setItem('productos_retiro', JSON.stringify(productos));
             renderizarTablas();
+            actualizarContadorSolicitudes();
         }
+
+        function actualizarContadorSolicitudes() {
+            const pendientes = productos.filter(p => p.requierePrecio).length;
+            contadorSolicitudes.textContent = pendientes;
+            textoContadorPrecios.textContent = `Tienes ${pendientes} precios pendientes por solicitar`;
+        }
+
+        function renderizarSolicitudesPrecio() {
+            gridBarraPrecios.innerHTML = '';
+            const pendientes = productos.filter(p => p.requierePrecio);
+
+            if (pendientes.length === 0) {
+                gridBarraPrecios.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #64748b; padding: 20px;">No hay solicitudes de precios pendientes en este momento.</p>`;
+                return;
+            }
+
+            pendientes.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'barcode-item';
+                div.innerHTML = `
+                    <div style="font-weight: bold; font-size: 13px; color: #1e293b;">${p.nombre}</div>
+                    <div style="font-size: 11px; color: #64748b;">Cod: ${p.codigo}</div>
+                    <div class="barcode-box">
+                        <svg id="barcode-${p.id}"></svg>
+                    </div>
+                    <button onclick="marcarPrecioSolicitado(${p.id})" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; width: 100%;">Solicitado / Resolver</button>
+                `;
+                gridBarraPrecios.appendChild(div);
+
+                // Generar el código de barras visual en el SVG
+                setTimeout(() => {
+                    try {
+                        JsBarcode(`#barcode-${p.id}`, p.codigo, {
+                            format: "CODE128",
+                            lineColor: "#000",
+                            width: 1.5,
+                            height: 50,
+                            displayValue: true
+                        });
+                    } catch (e) {
+                        console.error("Error generando código de barras:", e);
+                    }
+                }, 50);
+            });
+        }
+
+        barraEscaneadaInput.addEventListener('input', (e) => {
+            const codigo = e.target.value.trim();
+            const prod = productos.find(p => p.codigo === codigo && p.requierePrecio);
+            if (prod) {
+                alert(`¡Código de barras escaneado con éxito!\nProducto: ${prod.nombre}\nMarcando precio como solicitado.`);
+                marcarPrecioSolicitado(prod.id);
+                barraEscaneadaInput.value = '';
+            }
+        });
 
         function renderizarTablas() {
             ['legumbre_sin_cad', 'legumbre_con_cad', 'frio', 'percha'].forEach(cat => {
@@ -344,7 +461,6 @@
 
             const hoy = new Date().toISOString().split('T')[0];
             const filtroTexto = inputBuscador.value.toLowerCase().trim();
-
             const productosFiltrados = productos.filter(p => 
                 p.nombre.toLowerCase().includes(filtroTexto) || p.codigo.toLowerCase().includes(filtroTexto)
             );
@@ -362,11 +478,14 @@
                     estadoBadge = `<span class="badge-status bg-green">Vigente</span>`;
                 }
 
+                const etiquetaPrecio = p.requierePrecio ? `<span style="background: #fef3c7; color: #b45309; font-size: 9px; padding: 2px 6px; border-radius: 4px; display:inline-block; margin-top:2px;">🏷️ Pide Precio</span>` : '';
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>
                         <div style="font-weight: 500;">${p.nombre}</div>
                         <div style="font-size: 10px; color: #6b7280;">Cod: ${p.codigo}</div>
+                        ${etiquetaPrecio}
                     </td>
                     <td>${p.fechaPrincipal}</td>
                     <td style="font-weight: bold; color: #2563eb;">${p.fechaRetiro}</td>
@@ -375,6 +494,7 @@
                 `;
                 tbody.appendChild(tr);
             });
+            actualizarContadorSolicitudes();
         }
 
         let camaraActiva = false;
@@ -386,7 +506,6 @@
             if (!camaraActiva) iniciarCamara();
             else apagarCamara();
         });
-
         btnCerrarCam.addEventListener('click', apagarCamara);
 
         function iniciarCamara() {
