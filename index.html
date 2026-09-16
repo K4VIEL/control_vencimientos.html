@@ -16,6 +16,9 @@
         #alertaHorario { display: none; background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
+        /* Notificación flotante de éxito */
+        #toastExito { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; z-index: 1000; transition: opacity 0.3s ease; }
+
         header { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px; }
         @media(min-width: 768px) { header { flex-direction: row; justify-content: space-between; align-items: center; } }
         h1 { font-size: 20px; font-weight: bold; color: #111827; }
@@ -89,6 +92,9 @@
 <body>
 
     <div class="container">
+        <!-- Notificación Toast de Éxito -->
+        <div id="toastExito">¡Añadido y guardado exitosamente en la nube!</div>
+
         <!-- Notificación Flotante por Horario -->
         <div id="alertaHorario">
             🚨 ¡HORARIO DE RETIRO ACTIVO (6:30 PM - 9:00 PM)! Tienes productos que deben retirarse.
@@ -263,7 +269,6 @@
     </div>
 
     <script>
-        // CREDENCIALES DE SUPABASE INTEGRADAS
         const SUPABASE_URL = 'https://dbnlkdalbczxnizyrxez.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRibmxrZGFsYmN6eG5penlyeGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1MzE1ODUsImV4cCI6MjEwNTEwNzU4NX0.IAg6BdfzY4aqIBS6RQhafkRr_aeYos7pdaGAS8L16kA';
         
@@ -282,12 +287,21 @@
         const modoForm = document.getElementById('modoForm');
         const btnSubmitText = document.getElementById('btnSubmitText');
         const alertaHorario = document.getElementById('alertaHorario');
+        const toastExito = document.getElementById('toastExito');
         
         const solCodigo = document.getElementById('solCodigo');
         const solCantidad = document.getElementById('solCantidad');
         const contadorSolicitudes = document.getElementById('contadorSolicitudes');
         const textoContadorPrecios = document.getElementById('textoContadorPrecios');
         const gridSolicitudesPrecio = document.getElementById('gridSolicitudesPrecio');
+
+        function mostrarToast(mensaje) {
+            toastExito.textContent = mensaje;
+            toastExito.style.display = 'block';
+            setTimeout(() => {
+                toastExito.style.display = 'none';
+            }, 3000);
+        }
 
         function cambiarTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -317,7 +331,6 @@
         setInterval(verificarHorarioNotificacion, 30000);
         verificarHorarioNotificacion();
 
-        // Cargar datos iniciales desde Supabase
         async function cargarDatos() {
             const { data: prodData } = await supabaseClient.from('productos_sistema').select('*');
             if (prodData) productos = prodData;
@@ -329,7 +342,6 @@
             renderizarSolicitudesPrecio();
         }
 
-        // Configurar Realtime para actualización instantánea en tiempo real
         supabaseClient
             .channel('cambios-en-tiempo-real')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'productos_sistema' }, payload => {
@@ -409,6 +421,8 @@
             modoForm.style.color = '#0284c7';
             btnSubmitText.textContent = "Guardar en la Nube";
             inputCodigo.focus();
+            mostrarToast('¡Producto guardado exitosamente!');
+            cargarDatos();
         });
 
         // Guardar Solicitud de Precio en Supabase
@@ -422,14 +436,20 @@
             e.target.reset();
             solCantidad.value = '1';
             solCodigo.focus();
+            mostrarToast('¡Solicitud de precio añadida exitosamente!');
+            cargarDatos();
         });
 
         async function eliminarProducto(id) {
             await supabaseClient.from('productos_sistema').delete().eq('id', id);
+            mostrarToast('¡Producto eliminado exitosamente!');
+            cargarDatos();
         }
 
         async function eliminarSolicitudPrecio(id) {
             await supabaseClient.from('solicitudes_precio').delete().eq('id', id);
+            mostrarToast('¡Solicitud eliminada exitosamente!');
+            cargarDatos();
         }
 
         function actualizarContadorSolicitudes() {
@@ -517,7 +537,6 @@
             });
         }
 
-        // Cámaras móviles
         let camaraActiva = false;
         const btnToggleCam = document.getElementById('btnToggleCam');
         const btnCerrarCam = document.getElementById('btnCerrarCam');
@@ -610,7 +629,6 @@
             }
         }
 
-        // Iniciar la carga de datos en tiempo real al abrir la página
         cargarDatos();
     </script>
 </body>
