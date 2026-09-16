@@ -624,7 +624,6 @@
             cargarDatos();
         });
 
-        // REGISTRO DE SOLICITUD DE PRECIO (COMPLETO)
         document.getElementById('formSolicitudPrecio').addEventListener('submit', async (e) => {
             e.preventDefault();
             const codigo = document.getElementById('solCodigo').value.trim();
@@ -745,7 +744,14 @@
                     <button onclick="eliminarSolicitudPrecio(${s.id})" style="background: #ef4444; color: white; border: none; padding: 8px; border-radius: 8px; width: 100%; cursor:pointer; font-weight:bold;">Impreso / Eliminar</button>
                 `;
                 grid.appendChild(div);
-                setTimeout(() => JsBarcode(`#sol-barcode-${s.id}`, codigoMostrar, { format: "CODE128", width: 1.5, height: 40, displayValue: true }), 50);
+                
+                setTimeout(() => {
+                    try {
+                        JsBarcode(`#sol-barcode-${s.id}`, codigoMostrar, { format: "CODE128", width: 1.5, height: 40, displayValue: true });
+                    } catch (err) {
+                        console.error("Error generando código de barras:", err);
+                    }
+                }, 100);
             });
         }
 
@@ -768,7 +774,11 @@
                     <button onclick="procesarDestruccionParcial(${d.id}, '${d.codigo}', '${d.nombre || ''}', ${d.cantidad})" style="background: #10b981; color: white; border: none; padding: 8px; border-radius: 8px; width: 100%; cursor:pointer; font-weight:bold;">Destruir Parcial / Total</button>
                 `;
                 grid.appendChild(div);
-                setTimeout(() => JsBarcode(`#des-barcode-${d.id}`, d.codigo, { format: "CODE128", width: 1.5, height: 40, displayValue: true }), 50);
+                setTimeout(() => {
+                    try {
+                        JsBarcode(`#des-barcode-${d.id}`, d.codigo, { format: "CODE128", width: 1.5, height: 40, displayValue: true });
+                    } catch (e) {}
+                }, 100);
             });
 
             const tbodyHistorial = document.getElementById('lista-historial-destruccion');
@@ -913,3 +923,4 @@
     </script>
 </body>
 </html>
+
