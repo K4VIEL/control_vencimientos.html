@@ -89,7 +89,7 @@
 <body>
 
     <!-- PANTALLA DE LOGIN -->
-    <div id="loginScreen">
+    <div id="loginScreen" class="hidden-section">
         <h2 style="margin-bottom: 6px; text-align: center; color: #1f2937;">Control de Tienda</h2>
         <p style="text-align: center; color: #6b7280; margin-bottom: 20px; font-size: 12px;">Ingrese su usuario y clave laboral</p>
         <form id="loginForm" style="display: flex; flex-direction: column; gap: 12px;">
@@ -290,8 +290,9 @@
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let usuarioActual = null;
-        let rolActual = null;
+        let usuarioActual = localStorage.getItem('usuario_actual') || null;
+        let rolActual = localStorage.getItem('rol_actual') || null;
+
         let productos = [];
         let solicitudesPrecio = [];
         let productosDestruccion = [];
@@ -307,6 +308,39 @@
             toastExito.textContent = mensaje;
             toastExito.style.display = 'block';
             setTimeout(() => { toastExito.style.display = 'none'; }, 3000);
+        }
+
+        // VERIFICAR SESIÓN GUARDADA AL CARGAR
+        window.addEventListener('DOMContentLoaded', () => {
+            if (usuarioActual && rolActual) {
+                activarSesionInterfaz();
+            } else {
+                loginScreen.classList.remove('hidden-section');
+            }
+        });
+
+        function activarSesionInterfaz() {
+            loginScreen.classList.add('hidden-section');
+            appContainer.classList.remove('hidden-section');
+            document.getElementById('spanUserBadge').textContent = usuarioActual;
+            document.getElementById('spanRol').textContent = rolActual.toUpperCase();
+
+            const tabDestruccion = document.getElementById('tabBtnDestruccion');
+            const tabUsuarios = document.getElementById('tabBtnUsuarios');
+
+            if (rolActual === 'encargado' || rolActual === 'creador') {
+                tabDestruccion.classList.remove('hidden-tab');
+            } else {
+                tabDestruccion.classList.add('hidden-tab');
+            }
+
+            if (rolActual === 'creador') {
+                tabUsuarios.classList.remove('hidden-tab');
+            } else {
+                tabUsuarios.classList.add('hidden-tab');
+            }
+
+            cargarDatos();
         }
 
         loginForm.addEventListener('submit', async (e) => {
@@ -330,31 +364,16 @@
             usuarioActual = data.usuario;
             rolActual = data.rol;
 
-            loginScreen.classList.add('hidden-section');
-            appContainer.classList.remove('hidden-section');
-            document.getElementById('spanUserBadge').textContent = usuarioActual;
-            document.getElementById('spanRol').textContent = rolActual.toUpperCase();
+            // GUARDAR SESIÓN PERMANENTE
+            localStorage.setItem('usuario_actual', usuarioActual);
+            localStorage.setItem('rol_actual', rolActual);
 
-            // CONTROL ESTRICTO DE PESTAÑAS SEGÚN ROL
-            const tabDestruccion = document.getElementById('tabBtnDestruccion');
-            const tabUsuarios = document.getElementById('tabBtnUsuarios');
-
-            if (rolActual === 'encargado' || rolActual === 'creador') {
-                tabDestruccion.classList.remove('hidden-tab');
-            } else {
-                tabDestruccion.classList.add('hidden-tab');
-            }
-
-            if (rolActual === 'creador') {
-                tabUsuarios.classList.remove('hidden-tab');
-            } else {
-                tabUsuarios.classList.add('hidden-tab');
-            }
-
-            cargarDatos();
+            activarSesionInterfaz();
         });
 
         function cerrarSesion() {
+            localStorage.removeItem('usuario_actual');
+            localStorage.removeItem('rol_actual');
             usuarioActual = null;
             rolActual = null;
             appContainer.classList.add('hidden-section');
