@@ -24,8 +24,9 @@
         .badge { background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 500; display: inline-block; }
         
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tab-btn { background: #e5e7eb; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: #4b5563; }
+        .tab-btn { background: #e5e7eb; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: #4b5563; display: inline-block; }
         .tab-btn.active { background: #2563eb; color: white; }
+        .hidden-tab { display: none !important; }
 
         .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; }
         .card h2 { font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
@@ -119,8 +120,8 @@
             <div class="tabs" style="margin-top: 10px; width: 100%;">
                 <button class="tab-btn active" onclick="cambiarTab('vencimientos')">📦 Control de Retiros</button>
                 <button class="tab-btn" onclick="cambiarTab('solicitudes')">🏷️ Solicitudes de Precio (<span id="contadorSolicitudes">0</span>)</button>
-                <button class="tab-btn hidden-section" id="tabBtnDestruccion" onclick="cambiarTab('destruccion')">🗑️ Destrucción (<span id="contadorDestruccion">0</span>)</button>
-                <button class="tab-btn hidden-section" id="tabBtnUsuarios" onclick="cambiarTab('usuarios')">👥 Gestión de Usuarios</button>
+                <button class="tab-btn hidden-tab" id="tabBtnDestruccion" onclick="cambiarTab('destruccion')">🗑️ Destrucción (<span id="contadorDestruccion">0</span>)</button>
+                <button class="tab-btn hidden-tab" id="tabBtnUsuarios" onclick="cambiarTab('usuarios')">👥 Gestión de Usuarios</button>
             </div>
         </header>
 
@@ -334,17 +335,20 @@
             document.getElementById('spanUserBadge').textContent = usuarioActual;
             document.getElementById('spanRol').textContent = rolActual.toUpperCase();
 
-            // Ocultar/Mostrar pestañas estrictamente según permisos
+            // CONTROL ESTRICTO DE PESTAÑAS SEGÚN ROL
+            const tabDestruccion = document.getElementById('tabBtnDestruccion');
+            const tabUsuarios = document.getElementById('tabBtnUsuarios');
+
             if (rolActual === 'encargado' || rolActual === 'creador') {
-                document.getElementById('tabBtnDestruccion').classList.remove('hidden-section');
+                tabDestruccion.classList.remove('hidden-tab');
             } else {
-                document.getElementById('tabBtnDestruccion').classList.add('hidden-section');
+                tabDestruccion.classList.add('hidden-tab');
             }
 
             if (rolActual === 'creador') {
-                document.getElementById('tabBtnUsuarios').classList.remove('hidden-section');
+                tabUsuarios.classList.remove('hidden-tab');
             } else {
-                document.getElementById('tabBtnUsuarios').classList.add('hidden-section');
+                tabUsuarios.classList.add('hidden-tab');
             }
 
             cargarDatos();
