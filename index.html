@@ -9,54 +9,83 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-        body { background-color: #f3f4f6; color: #1f2937; padding: 16px; }
+        :root {
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-color: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #d1d5db;
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --header-bg: #ffffff;
+            --table-th-bg: #f9fafb;
+            --table-border: #e5e7eb;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --primary-color: #dc2626;
+            --primary-hover: #b91c1c;
+            --header-bg: #1e293b;
+            --table-th-bg: #0f172a;
+            --table-border: #334155;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; transition: background-color 0.3s, color 0.3s; }
+        body { background-color: var(--bg-color); color: var(--text-color); padding: 16px; }
         .container { max-width: 1200px; margin: 0 auto; }
         
         #alertaHorario { display: none; background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         #toastExito { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; z-index: 1000; }
 
-        header { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px; }
+        header { background: var(--header-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px; position: relative; }
         @media(min-width: 768px) { header { flex-direction: row; justify-content: space-between; align-items: center; } }
-        h1 { font-size: 20px; font-weight: bold; color: #111827; }
-        p { font-size: 13px; color: #6b7280; }
+        h1 { font-size: 20px; font-weight: bold; color: var(--text-color); }
+        p { font-size: 13px; color: var(--text-muted); }
         
         .badge { background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 500; display: inline-block; }
+        [data-theme="dark"] .badge { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
+
+        .theme-toggle { background: var(--primary-color); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 6px; width: fit-content; }
         
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tab-btn { background: #e5e7eb; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: #4b5563; display: inline-block; }
-        .tab-btn.active { background: #2563eb; color: white; }
+        .tab-btn { background: var(--border-color); border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-color); display: inline-block; }
+        .tab-btn.active { background: var(--primary-color); color: white; }
         .hidden-tab { display: none !important; }
 
-        .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; }
-        .card h2 { font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; }
+        .card h2 { font-size: 16px; font-weight: 600; color: var(--text-color); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
         
         .tools-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
         @media(min-width: 768px) { .tools-grid { grid-template-columns: 1fr 1fr; } }
         
-        .scan-box { background: #eff6ff; border: 2px dashed #3b82f6; padding: 14px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .search-box-standalone { background: #f0fdf4; border: 2px dashed #10b981; padding: 16px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 8px; }
+        .scan-box { background: var(--bg-color); border: 2px dashed var(--primary-color); padding: 14px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .search-box-standalone { background: var(--card-bg); border: 2px dashed #10b981; padding: 16px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 8px; }
         
-        input, select { width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 10px; font-size: 13px; outline: none; background: #fff; }
-        input:focus, select:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.2); }
+        input, select { width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 10px; font-size: 13px; outline: none; background: var(--card-bg); color: var(--text-color); }
+        input:focus, select:focus { border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(220,38,38,0.2); }
         
         .btn-camara { background: #0284c7; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: fit-content; }
         
-        #interactive, #interactiveSolicitud, #interactiveDestruccion { position: relative; width: 100%; height: 220px; border: 2px solid #3b82f6; border-radius: 8px; overflow: hidden; margin-bottom: 12px; background: #000; display: none; }
+        #interactive, #interactiveSolicitud, #interactiveDestruccion { position: relative; width: 100%; height: 220px; border: 2px solid var(--primary-color); border-radius: 8px; overflow: hidden; margin-bottom: 12px; background: #000; display: none; }
         #interactive canvas, #interactive video, #interactiveSolicitud canvas, #interactiveSolicitud video, #interactiveDestruccion canvas, #interactiveDestruccion video { width: 100%; height: 100%; object-fit: cover; }
 
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-        @media(min-width: 768px) { .form-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media(min-width: 768px) { .form-grid { grid-template-columns: repeat(4, 1fr); } }
         .form-group { display: flex; flex-direction: column; gap: 4px; }
-        label { font-size: 12px; font-weight: 500; color: #4b5563; }
+        label { font-size: 12px; font-weight: 500; color: var(--text-muted); }
         
         .btn-submit { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; grid-column: 1 / -1; justify-self: end; }
         
         .grid-sections { display: grid; grid-template-columns: 1fr; gap: 20px; }
         @media(min-width: 1024px) { .grid-sections { grid-template-columns: repeat(2, 1fr); } }
         
-        .section-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid #ccc; margin-bottom: 20px; }
-        .border-urgente { border-top-color: #ef4444; background: #fff5f5; }
+        .section-card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid #ccc; margin-bottom: 20px; }
+        .border-urgente { border-top-color: #ef4444; }
         .border-frio { border-top-color: #0ea5e9; }
         .border-legsin { border-top-color: #f59e0b; }
         .border-legcon { border-top-color: #10b981; }
@@ -66,32 +95,33 @@
         .border-pasillo5 { border-top-color: #8b5cf6; }
 
         .table-responsive { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
-        th, td { padding: 8px; border-bottom: 1px solid #e5e7eb; }
-        th { background: #f9fafb; color: #4b5563; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; color: var(--text-color); }
+        th, td { padding: 8px; border-bottom: 1px solid var(--table-border); }
+        th { background: var(--table-th-bg); color: var(--text-muted); }
         .badge-status { padding: 3px 8px; border-radius: 9999px; font-weight: 600; font-size: 11px; display: inline-block; }
         .bg-red { background: #fee2e2; color: #b91c1c; }
         .bg-amber { background: #fef3c7; color: #b45309; }
         .bg-green { background: #d1fae5; color: #047857; }
         .btn-delete { color: #ef4444; background: none; border: none; font-weight: 500; cursor: pointer; }
-        .btn-edit { color: #2563eb; background: none; border: none; font-weight: 500; cursor: pointer; margin-right: 8px; }
+        .btn-edit { color: var(--primary-color); background: none; border: none; font-weight: 500; cursor: pointer; margin-right: 8px; }
 
-        .price-request-card, .destruction-card, .usuarios-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .price-request-card, .destruction-card, .usuarios-card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .barcode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 16px; }
-        .barcode-item { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .barcode-item { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
         .barcode-box { background: white; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; display: flex; justify-content: center; }
         .counter-badge { background: #dbeafe; color: #1e40af; padding: 6px 16px; border-radius: 99px; font-weight: bold; font-size: 13px; display: inline-block; margin-bottom: 12px; }
+        [data-theme="dark"] .counter-badge { background: #450a0a; color: #fca5a5; }
         .hidden-section { display: none !important; }
         
-        #loginScreen { max-width: 400px; margin: 80px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        #loginScreen { max-width: 400px; margin: 80px auto; background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     </style>
 </head>
-<body>
+<body data-theme="light">
 
     <!-- PANTALLA DE LOGIN -->
     <div id="loginScreen" class="hidden-section">
-        <h2 style="margin-bottom: 6px; text-align: center; color: #1f2937;">Control de Tienda</h2>
-        <p style="text-align: center; color: #6b7280; margin-bottom: 20px; font-size: 12px;">Ingrese su usuario y clave laboral</p>
+        <h2 style="margin-bottom: 6px; text-align: center; color: var(--text-color);">Control de Tienda</h2>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 20px; font-size: 12px;">Ingrese su usuario y clave laboral</p>
         <form id="loginForm" style="display: flex; flex-direction: column; gap: 12px;">
             <div class="form-group">
                 <label>Usuario</label>
@@ -114,9 +144,12 @@
         <header>
             <div>
                 <h1 id="tituloBienvenida">Control en Línea</h1>
-                <p>Usuario: <span id="spanUserBadge" style="font-weight: bold; color: #2563eb;">...</span> | Rol: <span id="spanRol" class="badge" style="font-weight: bold;">...</span></p>
+                <p>Usuario: <span id="spanUserBadge" style="font-weight: bold; color: var(--primary-color);">...</span> | Rol: <span id="spanRol" class="badge" style="font-weight: bold;">...</span></p>
             </div>
-            <button onclick="cerrarSesion()" style="background: #ef4444; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold;">Cerrar Sesión</button>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <button class="theme-toggle" onclick="alternarTema()">🌓 Cambiar Tema</button>
+                <button onclick="cerrarSesion()" style="background: #ef4444; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold;">Cerrar Sesión</button>
+            </div>
             <div class="tabs" style="margin-top: 10px; width: 100%;">
                 <button class="tab-btn active" onclick="cambiarTab('vencimientos')">📦 Control de Retiros</button>
                 <button class="tab-btn" onclick="cambiarTab('solicitudes')">🏷️ Solicitudes de Precio (<span id="contadorSolicitudes">0</span>)</button>
@@ -130,11 +163,11 @@
             <div class="card">
                 <h2>
                     <span>Registrar Producto</span>
-                    <span id="modoForm" style="font-size: 12px; color: #0284c7; font-weight: normal;">Modo: Ingreso manual o pistola</span>
+                    <span id="modoForm" style="font-size: 12px; color: var(--primary-color); font-weight: normal;">Modo: Ingreso manual o pistola</span>
                 </h2>
                 <div class="tools-grid" style="grid-template-columns: 1fr;">
                     <div class="scan-box">
-                        <label style="font-weight: 600; color: #1e40af;">Escanear / Ingresar Código de Barras</label>
+                        <label style="font-weight: 600; color: var(--primary-color);">Escanear / Ingresar Código de Barras</label>
                         <input type="text" id="codigoEscaneado" placeholder="Pasa la pistola o escribe aquí...">
                         <button type="button" id="btnToggleCam" class="btn-camara">📷 Usar Cámara Celular</button>
                     </div>
@@ -161,6 +194,10 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label>Cantidad de Producto</label>
+                        <input type="number" id="cantidadProducto" min="1" value="1" required>
+                    </div>
+                    <div class="form-group">
                         <label id="labelFecha">Fecha de Caducidad / Vencimiento</label>
                         <input type="date" id="fechaPrincipal" required>
                     </div>
@@ -177,7 +214,7 @@
                 <h3 style="color: #b91c1c;">🚨 Productos Vencidos (Debieron Salir)</h3>
                 <div class="table-responsive">
                     <table>
-                        <thead><tr><th>Código / Producto</th><th>Área</th><th>F. Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
+                        <thead><tr><th>Código / Producto</th><th>Cant.</th><th>Área</th><th>F. Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
                         <tbody id="lista-urgentes"></tbody>
                     </table>
                 </div>
@@ -186,31 +223,31 @@
             <div class="grid-sections">
                 <div class="section-card border-frio">
                     <h3>❄️ Nevera / Productos de Frío</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-frio"></tbody></table></div>
+                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Cant.</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-frio"></tbody></table></div>
                 </div>
                 <div class="section-card border-legsin">
                     <h3>🌱 Legumbres (Sin caducidad)</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Elaboración</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-legumbre_sin_cad"></tbody></table></div>
+                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Cant.</th><th>Elaboración</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-legumbre_sin_cad"></tbody></table></div>
                 </div>
                 <div class="section-card border-legcon">
                     <h3>📦 Legumbres Empacadas</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-legumbre_con_cad"></tbody></table></div>
+                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Cant.</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-legumbre_con_cad"></tbody></table></div>
                 </div>
                 <div class="section-card border-pasillo1">
                     <h3>🛒 Pasillo 1: Limpieza</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo1"></tbody></table></div>
+                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Cant.</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo1"></tbody></table></div>
                 </div>
                 <div class="section-card border-pasillo2">
                     <h3>🍿 Pasillo 2: Snack</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo2"></tbody></table></div>
+                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Cant.</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo2"></tbody></table></div>
                 </div>
                 <div class="section-card border-pasillo3">
                     <h3>🌾 Pasillo 3: Granos</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo3"></tbody></table></div>
+                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Cant.</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo3"></tbody></table></div>
                 </div>
                 <div class="section-card border-pasillo5">
                     <h3>🔩 Pasillo 5: Ferri</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo5"></tbody></table></div>
+                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Cant.</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo5"></tbody></table></div>
                 </div>
             </div>
         </div>
@@ -220,58 +257,58 @@
             <div class="price-request-card">
                 <h2>Apartado de Solicitudes de Precio</h2>
                 <div class="counter-badge" id="textoContadorPrecios">Tienes 0 solicitudes pendientes</div>
-                <div class="card" style="background: #f8fafc; border: 1px solid #cbd5e1; margin-bottom: 20px;">
+                <div class="card" style="background: var(--bg-color); border: 1px solid var(--border-color); margin-bottom: 20px;">
                     <div style="margin-bottom: 12px;"><button type="button" id="btnToggleCamSolicitud" class="btn-camara">📷 Escanear con Cámara</button></div>
                     <div id="interactiveSolicitud"></div>
                     <button type="button" id="btnCerrarCamSolicitud" class="hidden-section" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
                     <form id="formSolicitudPrecio" class="form-grid" style="grid-template-columns: 2fr 1fr auto;">
                         <div class="form-group"><label>Código de Barras</label><input type="text" id="solCodigo" required placeholder="Código..."></div>
                         <div class="form-group"><label>Cantidad</label><input type="number" id="solCantidad" min="1" value="1" required></div>
-                        <div style="display: flex; align-items: flex-end;"><button type="submit" style="background: #2563eb; color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; height: 38px;">Generar</button></div>
+                        <div style="display: flex; align-items: flex-end;"><button type="submit" style="background: var(--primary-color); color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; height: 38px;">Generar</button></div>
                     </form>
                 </div>
                 <div class="barcode-grid" id="gridSolicitudesPrecio"></div>
             </div>
         </div>
 
-        <!-- SECCIÓN 3: DESTRUCCIÓN PARCIAL Y PENDIENTES -->
+        <!-- SECCIÓN 3: DESTRUCCIÓN -->
         <div id="seccion-destruccion" class="hidden-section">
             <div class="destruction-card">
                 <h2>Apartado de Destrucción de Productos</h2>
                 <div class="counter-badge" id="textoContadorDestruccion">Tienes 0 registros pendientes</div>
-                <div class="card" style="background: #f8fafc; border: 1px solid #cbd5e1; margin-bottom: 20px;">
+                <div class="card" style="background: var(--bg-color); border: 1px solid var(--border-color); margin-bottom: 20px;">
                     <div style="margin-bottom: 12px;"><button type="button" id="btnToggleCamDestruccion" class="btn-camara">📷 Escanear con Cámara</button></div>
                     <div id="interactiveDestruccion"></div>
                     <button type="button" id="btnCerrarCamDestruccion" class="hidden-section" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
                     
                     <form id="formDestruccion" class="form-grid" style="grid-template-columns: 2fr 2fr 1fr auto;">
                         <div class="form-group"><label>Código de Barras</label><input type="text" id="desCodigo" required placeholder="Código..."></div>
-                        <div class="form-group"><label>Nombre / Descripción del Producto</label><input type="text" id="desNombre" required placeholder="Ej: Yogurt Entero 1L"></div>
+                        <div class="form-group"><label>Nombre / Descripción</label><input type="text" id="desNombre" required placeholder="Ej: Yogurt Entero 1L"></div>
                         <div class="form-group"><label>Cantidad</label><input type="number" id="desCantidad" min="1" value="1" required></div>
-                        <div style="display: flex; align-items: flex-end;"><button type="submit" style="background: #dc2626; color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; height: 38px;">Dejar Pendiente</button></div>
+                        <div style="display: flex; align-items: flex-end;"><button type="submit" style="background: var(--primary-color); color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; height: 38px;">Dejar Pendiente</button></div>
                     </form>
                 </div>
                 
-                <h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 15px; color: #374151;">Productos Pendientes por Destruir</h3>
+                <h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 15px; color: var(--text-color);">Productos Pendientes por Destruir</h3>
                 <div class="barcode-grid" id="gridDestruccion"></div>
 
-                <h3 style="margin-top: 32px; margin-bottom: 12px; font-size: 15px; color: #047857;">📜 Historial de Destrucciones Realizadas</h3>
+                <h3 style="margin-top: 32px; margin-bottom: 12px; font-size: 15px; color: #10b981;">📜 Historial de Destrucciones Realizadas</h3>
                 <div class="table-responsive">
                     <table>
-                        <thead><tr><th>Producto / Código</th><th>Cantidad Destruida</th><th>Encargado</th><th>Fecha y Hora</th></tr></thead>
+                        <thead><tr><th>Producto / Código</th><th>Cantidad</th><th>Encargado</th><th>Fecha y Hora</th></tr></thead>
                         <tbody id="lista-historial-destruccion"></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- SECCIÓN 4: GESTIÓN DE USUARIOS (EXCLUSIVO CREADOR) -->
+        <!-- SECCIÓN 4: GESTIÓN DE USUARIOS -->
         <div id="seccion-usuarios" class="hidden-section">
             <div class="usuarios-card">
                 <h2>Gestión de Usuarios del Sistema (Exclusivo Creador)</h2>
-                <p style="color: #6b7280; font-size: 13px; margin-bottom: 16px;">Crea nuevas cuentas, modifica sus datos o elimina accesos.</p>
+                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Crea nuevas cuentas, modifica sus datos o elimina accesos.</p>
                 
-                <div class="card" style="background: #f8fafc; border: 1px solid #cbd5e1; margin-bottom: 20px;">
+                <div class="card" style="background: var(--bg-color); border: 1px solid var(--border-color); margin-bottom: 20px;">
                     <form id="formCrearUsuario" class="form-grid" style="grid-template-columns: 1fr 1fr 1fr auto;">
                         <div class="form-group"><label>Nuevo Usuario</label><input type="text" id="nuevoUsuario" required placeholder="Nombre de usuario..."></div>
                         <div class="form-group"><label>Clave Laboral</label><input type="text" id="nuevaClave" required placeholder="Contraseña..."></div>
@@ -304,6 +341,7 @@
 
         let usuarioActual = localStorage.getItem('usuario_actual') || null;
         let rolActual = localStorage.getItem('rol_actual') || null;
+        let temaActual = localStorage.getItem('tema_sistema') || 'light';
 
         let productos = [];
         let solicitudesPrecio = [];
@@ -317,6 +355,16 @@
         const loginError = document.getElementById('loginError');
         const toastExito = document.getElementById('toastExito');
 
+        function aplicarTema(tema) {
+            document.body.setAttribute('data-theme', tema);
+            localStorage.setItem('tema_sistema', tema);
+        }
+
+        function alternarTema() {
+            temaActual = temaActual === 'light' ? 'dark' : 'light';
+            aplicarTema(temaActual);
+        }
+
         function mostrarToast(mensaje) {
             toastExito.textContent = mensaje;
             toastExito.style.display = 'block';
@@ -324,6 +372,7 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
+            aplicarTema(temaActual);
             if (usuarioActual && rolActual) {
                 activarSesionInterfaz();
             } else {
@@ -465,7 +514,7 @@
                         ${u.rol !== 'creador' ? `
                             <button class="btn-edit" onclick="modificarUsuario(${u.id}, '${u.usuario}', '${u.clave}')">Modificar</button> | 
                             <button class="btn-delete" onclick="eliminarUsuario(${u.id})">Eliminar</button>
-                        ` : '<span style="color:#6b7280; font-size:11px;">Protegido</span>'}
+                        ` : '<span style="color:var(--text-muted); font-size:11px;">Protegido</span>'}
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -526,12 +575,13 @@
             .on('postgres_changes', { event: '*', schema: 'public', table: 'perfiles_usuarios' }, () => { if(rolActual === 'creador') cargarUsuariosSistema(); })
             .subscribe();
 
-        // FORMULARIOS DE PRODUCTOS Y PRECIOS
+        // FORMULARIO DE PRODUCTOS CON CANTIDAD
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const codigo = document.getElementById('codigoBarraGuardar').value || document.getElementById('codigoEscaneado').value.trim() || ('CODE-' + Math.floor(100000 + Math.random() * 900000));
             const nombre = document.getElementById('nombre').value.trim();
             const categoria = document.getElementById('categoria').value;
+            const cantidad = parseInt(document.getElementById('cantidadProducto').value) || 1;
             const fechaStr = document.getElementById('fechaPrincipal').value;
 
             let fechaRetiro = new Date(fechaStr + 'T00:00:00');
@@ -540,8 +590,17 @@
             else if (categoria === 'frio') fechaRetiro.setDate(fechaRetiro.getDate() - 5);
             else fechaRetiro.setDate(fechaRetiro.getDate() - 3);
 
-            await supabaseClient.from('productos_sistema').insert([{ codigo, nombre, categoria, fecha_principal: fechaStr, fecha_retiro: fechaRetiro.toISOString().split('T')[0] }]);
+            await supabaseClient.from('productos_sistema').insert([{
+                codigo,
+                nombre,
+                categoria,
+                cantidad,
+                fecha_principal: fechaStr,
+                fecha_retiro: fechaRetiro.toISOString().split('T')[0]
+            }]);
+
             e.target.reset();
+            document.getElementById('cantidadProducto').value = '1';
             document.getElementById('codigoEscaneado').value = '';
             mostrarToast('¡Guardado exitosamente!');
             cargarDatos();
@@ -581,7 +640,6 @@
         async function eliminarProducto(id) { await supabaseClient.from('productos_sistema').delete().eq('id', id); cargarDatos(); }
         async function eliminarSolicitudPrecio(id) { await supabaseClient.from('solicitudes_precio').delete().eq('id', id); cargarDatos(); }
         
-        // FUNCIÓN DE DESTRUCCIÓN PARCIAL / PENDIENTE
         async function procesarDestruccionParcial(id, codigo, nombreProd, cantidadActual) {
             let inputCantidad = prompt(`¿Cuántas unidades deseas destruir de este lote? (Pendientes: ${cantidadActual})`, cantidadActual);
             if (inputCantidad === null) return;
@@ -597,7 +655,6 @@
                 return;
             }
 
-            // 1. Guardar en el Historial solo lo que se destruyó ahora
             await supabaseClient.from('historial_destruccion').insert([{
                 codigo: codigo,
                 nombre: nombreProd,
@@ -605,15 +662,12 @@
                 usuario: usuarioActual || 'desconocido'
             }]);
 
-            // 2. Calcular restante
             let restante = cantidadActual - aDestruir;
 
             if (restante > 0) {
-                // Actualizar el registro pendiente con lo que sobra
                 await supabaseClient.from('productos_destruccion').update({ cantidad: restante }).eq('id', id);
                 mostrarToast(`¡Se destruyeron ${aDestruir} unidades! Quedan ${restante} pendientes.`);
             } else {
-                // Si ya no queda nada, eliminar el registro pendiente
                 await supabaseClient.from('productos_destruccion').delete().eq('id', id);
                 mostrarToast(`¡Lote totalmente destruido y registrado!`);
             }
@@ -630,7 +684,7 @@
             solicitudesPrecio.forEach(s => {
                 const div = document.createElement('div');
                 div.className = 'barcode-item';
-                div.innerHTML = `<div style="font-size: 12px; color: #2563eb; font-weight: 600;">Cantidad solicitada: ${s.cantidad}</div><div style="font-size: 11px; color: #64748b;">Cod: ${s.codigo}</div><div class="barcode-box"><svg id="sol-barcode-${s.id}"></svg></div><button onclick="eliminarSolicitudPrecio(${s.id})" style="background: #ef4444; color: white; border: none; padding: 6px; border-radius: 6px; width: 100%; cursor:pointer;">Impreso / Eliminar</button>`;
+                div.innerHTML = `<div style="font-size: 12px; color: var(--primary-color); font-weight: 600;">Cantidad solicitada: ${s.cantidad}</div><div style="font-size: 11px; color: var(--text-muted);">Cod: ${s.codigo}</div><div class="barcode-box"><svg id="sol-barcode-${s.id}"></svg></div><button onclick="eliminarSolicitudPrecio(${s.id})" style="background: #ef4444; color: white; border: none; padding: 6px; border-radius: 6px; width: 100%; cursor:pointer;">Impreso / Eliminar</button>`;
                 grid.appendChild(div);
                 setTimeout(() => JsBarcode(`#sol-barcode-${s.id}`, s.codigo, { format: "CODE128", width: 1.5, height: 40, displayValue: true }), 50);
             });
@@ -639,7 +693,6 @@
         function renderizarDestruccion() {
             if (rolActual !== 'encargado' && rolActual !== 'creador') return;
             
-            // Renderizar pendientes
             const grid = document.getElementById('gridDestruccion');
             grid.innerHTML = '';
             document.getElementById('contadorDestruccion').textContent = productosDestruccion.length;
@@ -649,9 +702,9 @@
                 const div = document.createElement('div');
                 div.className = 'barcode-item';
                 div.innerHTML = `
-                    <div style="font-size: 13px; font-weight: bold; color: #1f2937;">${d.nombre || 'Sin descripción'}</div>
-                    <div style="font-size: 12px; color: #dc2626; font-weight: 600;">Cantidad pendiente: ${d.cantidad}</div>
-                    <div style="font-size: 11px; color: #64748b;">Cod: ${d.codigo} | Creado por: <b>${d.usuario || 'N/A'}</b></div>
+                    <div style="font-size: 13px; font-weight: bold; color: var(--text-color);">${d.nombre || 'Sin descripción'}</div>
+                    <div style="font-size: 12px; color: var(--primary-color); font-weight: 600;">Cantidad pendiente: ${d.cantidad}</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Cod: ${d.codigo} | Creado por: <b>${d.usuario || 'N/A'}</b></div>
                     <div class="barcode-box"><svg id="des-barcode-${d.id}"></svg></div>
                     <button onclick="procesarDestruccionParcial(${d.id}, '${d.codigo}', '${d.nombre || ''}', ${d.cantidad})" style="background: #10b981; color: white; border: none; padding: 6px; border-radius: 6px; width: 100%; cursor:pointer;">Destruir Parcial / Total</button>
                 `;
@@ -659,20 +712,19 @@
                 setTimeout(() => JsBarcode(`#des-barcode-${d.id}`, d.codigo, { format: "CODE128", width: 1.5, height: 40, displayValue: true }), 50);
             });
 
-            // Renderizar Historial
             const tbodyHistorial = document.getElementById('lista-historial-destruccion');
             tbodyHistorial.innerHTML = '';
             if (historialDestruccion.length === 0) {
-                tbodyHistorial.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#6b7280; padding:10px;">No hay registros en el historial.</td></tr>`;
+                tbodyHistorial.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:10px;">No hay registros en el historial.</td></tr>`;
             } else {
                 historialDestruccion.forEach(h => {
                     const fechaFormateada = new Date(h.fecha_hora).toLocaleString();
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td><b>${h.nombre || 'Producto'}</b><br><small style="color:#64748b;">Cod: ${h.codigo}</small></td>
-                        <td><span style="color:#dc2626; font-weight:bold;">${h.cantidad}</span></td>
+                        <td><b>${h.nombre || 'Producto'}</b><br><small style="color:var(--text-muted);">Cod: ${h.codigo}</small></td>
+                        <td><span style="color:var(--primary-color); font-weight:bold;">${h.cantidad}</span></td>
                         <td><code>${h.usuario}</code></td>
-                        <td style="font-size:11px; color:#4b5563;">${fechaFormateada}</td>
+                        <td style="font-size:11px; color:var(--text-muted);">${fechaFormateada}</td>
                     `;
                     tbodyHistorial.appendChild(tr);
                 });
@@ -693,22 +745,23 @@
 
             filtrados.forEach(p => {
                 let badge = p.fecha_retiro < hoy ? `<span class="badge-status bg-red">¡URGENTE!</span>` : (p.fecha_retiro === hoy ? `<span class="badge-status bg-amber">Retirar Hoy</span>` : `<span class="badge-status bg-green">Vigente</span>`);
-                
+                const cant = p.cantidad || 1;
+
                 if (p.fecha_retiro < hoy && tbodyUrgentes) {
                     urgentesCount++;
                     const trU = document.createElement('tr');
-                    trU.innerHTML = `<td><div><b>${p.nombre}</b></div><small>Cod: ${p.codigo}</small></td><td>${p.categoria}</td><td style="color:red; font-weight:bold;">${p.fecha_retiro}</td><td>${badge}</td><td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button></td>`;
+                    trU.innerHTML = `<td><div><b>${p.nombre}</b></div><small>Cod: ${p.codigo}</small></td><td><b>${cant}</b></td><td>${p.categoria}</td><td style="color:red; font-weight:bold;">${p.fecha_retiro}</td><td>${badge}</td><td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button></td>`;
                     tbodyUrgentes.appendChild(trU);
                 }
 
                 const tbody = document.getElementById(`lista-${p.categoria}`);
                 if (tbody) {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td><div><b>${p.nombre}</b></div><small>Cod: ${p.codigo}</small></td><td>${p.fecha_principal}</td><td style="color:#2563eb; font-weight:bold;">${p.fecha_retiro}</td><td>${badge}</td><td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button></td>`;
+                    tr.innerHTML = `<td><div><b>${p.nombre}</b></div><small>Cod: ${p.codigo}</small></td><td><b>${cant}</b></td><td>${p.fecha_principal}</td><td style="color:var(--primary-color); font-weight:bold;">${p.fecha_retiro}</td><td>${badge}</td><td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button></td>`;
                     tbody.appendChild(tr);
                 }
             });
-            if (tbodyUrgentes && urgentesCount === 0) tbodyUrgentes.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#6b7280; padding:10px;">Todo al día.</td></tr>`;
+            if (tbodyUrgentes && urgentesCount === 0) tbodyUrgentes.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:10px;">Todo al día.</td></tr>`;
         }
 
         document.getElementById('inputBuscador').addEventListener('input', renderizarTablas);
@@ -772,6 +825,7 @@
                 if (existente) {
                     document.getElementById('nombre').value = existente.nombre;
                     document.getElementById('categoria').value = existente.categoria;
+                    document.getElementById('cantidadProducto').value = existente.cantidad || 1;
                     document.getElementById('modoForm').textContent = `⚡ Autocompletado: ${existente.nombre}`;
                 } else {
                     document.getElementById('modoForm').textContent = `Nuevo código: ${codigo}`;
@@ -794,6 +848,7 @@
                 const encontrado = productos.find(p => p.codigo === codigo);
                 if (encontrado) {
                     document.getElementById('desNombre').value = encontrado.nombre;
+                    document.getElementById('desCantidad').value = encontrado.cantidad || 1;
                 } else {
                     document.getElementById('desNombre').focus();
                 }
