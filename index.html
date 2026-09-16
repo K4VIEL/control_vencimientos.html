@@ -10,6 +10,11 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
         body { background-color: #f3f4f6; color: #1f2937; padding: 16px; }
         .container { max-width: 1200px; margin: 0 auto; }
+        
+        /* Notificación Flotante Diaria (6:30 PM - 9:00 PM) */
+        #alertaHorario { display: none; background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
         header { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px; }
         @media(min-width: 768px) { header { flex-direction: row; justify-content: space-between; align-items: center; } }
         h1 { font-size: 20px; font-weight: bold; color: #111827; }
@@ -17,25 +22,28 @@
         .badge { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 500; display: inline-block; }
         
         .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; }
-        .card h2 { font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .card h2 { font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
         
-        /* Barra de Escaneo Rápido */
-        .scan-bar { background: #eff6ff; border: 2px dashed #3b82f6; padding: 16px; border-radius: 10px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
-        @media(min-width: 768px) { .scan-bar { flex-direction: row; align-items: center; justify-content: space-between; } }
-        .scan-input { flex: 1; padding: 10px; border: 1px solid #93c5fd; border-radius: 8px; font-size: 14px; outline: none; background: #fff; }
-        .btn-camara { background: #0284c7; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .tools-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
+        @media(min-width: 768px) { .tools-grid { grid-template-columns: 1fr 1fr; } }
+        
+        .scan-box { background: #eff6ff; border: 2px dashed #3b82f6; padding: 14px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .search-box { background: #f0fdf4; border: 2px dashed #10b981; padding: 14px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
+        
+        input, select { width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 10px; font-size: 13px; outline: none; background: #fff; }
+        input:focus, select:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.2); }
+        
+        .btn-camara { background: #0284c7; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: fit-content; }
         .btn-camara:hover { background: #0369a1; }
 
-        /* Contenedor de la cámara */
-        #interactive.viewport { position: relative; width: 100%; height: 250px; border: 2px solid #3b82f6; border-radius: 8px; overflow: hidden; margin-bottom: 15px; background: #000; display: none; }
+        #interactive.viewport { position: relative; width: 100%; height: 220px; border: 2px solid #3b82f6; border-radius: 8px; overflow: hidden; margin-bottom: 12px; background: #000; display: none; }
         #interactive.viewport canvas, #interactive.viewport video { width: 100%; height: 100%; object-fit: cover; }
 
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-        @media(min-width: 768px) { .form-grid { grid-template-columns: repeat(4, 1fr); } }
+        @media(min-width: 768px) { .form-grid { grid-template-columns: repeat(3, 1fr); } }
         .form-group { display: flex; flex-direction: column; gap: 4px; }
         label { font-size: 12px; font-weight: 500; color: #4b5563; }
-        input, select { width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 10px; font-size: 13px; outline: none; }
-        input:focus, select:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.2); }
+        
         .btn-submit { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; grid-column: 1 / -1; justify-self: end; }
         .btn-submit:hover { background: #059669; }
 
@@ -52,7 +60,6 @@
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
         th, td { padding: 8px; border-bottom: 1px solid #e5e7eb; }
         th { background: #f9fafb; color: #4b5563; }
-        .hidden { display: none !important; }
         .badge-status { padding: 3px 8px; border-radius: 9999px; font-weight: 600; font-size: 11px; display: inline-block; }
         .bg-red { background: #fee2e2; color: #b91c1c; }
         .bg-amber { background: #fef3c7; color: #b45309; }
@@ -64,40 +71,47 @@
 <body>
 
     <div class="container">
+        <!-- Notificación Flotante por Horario (6:30 PM a 9:00 PM) -->
+        <div id="alertaHorario">
+            🚨 ¡HORARIO DE RETIRO ACTIVO (6:30 PM - 9:00 PM)! Tienes productos que deben retirarse de perchas, vitrinas, islas o frío.
+        </div>
+
         <!-- Encabezado -->
         <header>
             <div>
                 <h1>Control de Retiro de Productos</h1>
-                <p>Escaneo rápido de barras y gestión por vencimientos internos.</p>
+                <p>Escáner rápido, buscador y alerta diaria programada.</p>
             </div>
             <div class="badge">
                 Regla Activa: Legumbres (8d / 2d) | Frío (5d) | Perchas (3d)
             </div>
         </header>
 
-        <!-- Formulario Inteligente y Escáner -->
+        <!-- Controles Principales (Escáner y Buscador) -->
         <div class="card">
             <h2>
-                <span>Registro y Escáner de Productos</span>
+                <span>Operaciones de Control</span>
                 <span id="modoForm" style="font-size: 12px; color: #0284c7; font-weight: normal;">Modo: Ingreso manual o pistola</span>
             </h2>
 
-            <!-- Barra de Escaneo Rápido -->
-            <div class="scan-bar">
-                <div style="flex: 1;">
-                    <label style="font-weight: 600; color: #1e40af; margin-bottom: 4px; display: block;">Escanear Código de Barras (Pistola o Teclado)</label>
-                    <input type="text" id="codigoEscaneado" class="scan-input" placeholder="Haz clic aquí y pasa la pistola o escribe el código..." autofocus>
-                </div>
-                <div style="display: flex; gap: 8px; align-items: flex-end;">
+            <div class="tools-grid">
+                <div class="scan-box">
+                    <label style="font-weight: 600; color: #1e40af;">Escanear Código de Barras (Pistola o Teclado)</label>
+                    <input type="text" id="codigoEscaneado" placeholder="Pasa la pistola o escribe aquí..." autofocus>
                     <button type="button" id="btnToggleCam" class="btn-camara">📷 Usar Cámara Celular</button>
+                </div>
+
+                <div class="search-box">
+                    <label style="font-weight: 600; color: #047857;">Buscar Producto en el Sistema</label>
+                    <input type="text" id="inputBuscador" placeholder="Escribe el nombre o código para ver fecha...">
+                    <span style="font-size: 11px; color: #065f46;">Filtra automáticamente las tablas de abajo.</span>
                 </div>
             </div>
 
-            <!-- Visor de la Cámara -->
             <div id="interactive" class="viewport"></div>
-            <button type="button" id="btnCerrarCam" class="hidden" style="margin-bottom: 15px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
+            <button type="button" id="btnCerrarCam" class="hidden" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
 
-            <!-- Formulario de Registro -->
+            <!-- Formulario (Caducidad obligatoria, elaboración opcional) -->
             <form id="productForm" class="form-grid">
                 <input type="hidden" id="codigoBarraGuardar">
                 <div class="form-group">
@@ -107,21 +121,21 @@
                 <div class="form-group">
                     <label>Categoría / Regla</label>
                     <select id="categoria" required>
-                        <option value="legumbre_sin_cad">Legumbre (Solo fecha elaboración - Retiro 8 días)</option>
-                        <option value="legumbre_con_cad">Legumbre Empacada (Elaboración + Caducidad - Retiro 2 días antes)</option>
-                        <option value="frio">Producto de Frío (Retiro 5 días antes)</option>
-                        <option value="percha">Producto de Perchas/Islas/Vitrinas (Retiro 3 días antes)</option>
+                        <option value="legumbre_sin_cad">Legumbre (Sin caducidad - Retiro 8 días desde elaboración)</option>
+                        <option value="legumbre_con_cad">Legumbre Empacada (Retiro 2 días antes de caducidad)</option>
+                        <option value="frio">Producto de Frío (Retiro 5 días antes de caducidad)</option>
+                        <option value="percha">Producto de Perchas/Islas/Vitrinas (Retiro 3 días antes de caducidad)</option>
                     </select>
                 </div>
-                <div class="form-group" id="fecha1Container">
-                    <label id="labelFecha1">Fecha de Elaboración</label>
-                    <input type="date" id="fecha1" required>
+                <div class="form-group">
+                    <label id="labelFecha">Fecha de Caducidad (o Elaboración si es legumbre)</label>
+                    <input type="date" id="fechaPrincipal" required>
                 </div>
-                <div class="form-group hidden" id="fecha2Container">
-                    <label id="labelFecha2">Fecha de Caducidad Impresa</label>
-                    <input type="date" id="fecha2">
+                <div class="form-group">
+                    <label>Fecha de Elaboración (Opcional)</label>
+                    <input type="date" id="fechaElaboracion">
                 </div>
-                <button type="submit" class="btn-submit">Guardar Producto en el Sistema</button>
+                <button type="submit" class="btn-submit" id="btnSubmitText">Guardar Producto en el Sistema</button>
             </form>
         </div>
 
@@ -205,21 +219,45 @@
         </div>
     </div>
 
-    <!-- Script de Lógica y Escáner -->
     <script>
         let productos = JSON.parse(localStorage.getItem('productos_retiro')) || [];
 
         const inputCodigo = document.getElementById('codigoEscaneado');
+        const inputBuscador = document.getElementById('inputBuscador');
         const codigoBarraGuardar = document.getElementById('codigoBarraGuardar');
         const inputNombre = document.getElementById('nombre');
         const categoriaSelect = document.getElementById('categoria');
-        const fecha2Container = document.getElementById('fecha2Container');
-        const labelFecha1 = document.getElementById('labelFecha1');
-        const labelFecha2 = document.getElementById('labelFecha2');
-        const fecha2Input = document.getElementById('fecha2');
+        const labelFecha = document.getElementById('labelFecha');
+        const fechaPrincipalInput = document.getElementById('fechaPrincipal');
+        const fechaElaboracionInput = document.getElementById('fechaElaboracion');
         const modoForm = document.getElementById('modoForm');
+        const btnSubmitText = document.getElementById('btnSubmitText');
+        const alertaHorario = document.getElementById('alertaHorario');
 
-        // Manejar cuando se escanea con pistola o se escribe un código
+        // Notificación flotante de 6:30 PM (18:30) a 9:00 PM (21:00)
+        function verificarHorarioNotificacion() {
+            const ahora = new Date();
+            const horas = ahora.getHours();
+            const minutos = ahora.getMinutes();
+            const tiempoMinutos = horas * 60 + minutos;
+
+            if (tiempoMinutos >= 1110 && tiempoMinutos <= 1260) {
+                alertaHorario.style.display = 'block';
+            } else {
+                alertaHorario.style.display = 'none';
+            }
+        }
+        setInterval(verificarHorarioNotificacion, 30000);
+        verificarHorarioNotificacion();
+
+        categoriaSelect.addEventListener('change', () => {
+            if (categoriaSelect.value === 'legumbre_sin_cad') {
+                labelFecha.textContent = "Fecha de Elaboración";
+            } else {
+                labelFecha.textContent = "Fecha de Caducidad";
+            }
+        });
+
         inputCodigo.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -229,61 +267,47 @@
 
         function procesarCodigoLeido(codigo) {
             if (!codigo) return;
-            
-            // Buscar si ya está registrado
             const existente = productos.find(p => p.codigo === codigo);
 
+            codigoBarraGuardar.value = codigo;
             if (existente) {
-                alert(`¡Producto ya registrado!\nNombre: ${existente.nombre}\nFecha de Retiro: ${existente.fechaRetiro}`);
-                inputCodigo.value = '';
-                inputCodigo.focus();
+                inputNombre.value = existente.nombre;
+                categoriaSelect.value = existente.categoria;
+                modoForm.textContent = `Actualizando lote para: ${existente.nombre} (Cod: ${codigo})`;
+                modoForm.style.color = '#f59e0b';
+                btnSubmitText.textContent = "Registrar Nuevo Lote / Fecha";
+                alert(`¡El producto "${existente.nombre}" ya existe! Ingresa la nueva fecha abajo.`);
             } else {
-                // No está registrado: abrir formulario y prellenar código
-                codigoBarraGuardar.value = codigo;
                 modoForm.textContent = `Registrando nuevo código: ${codigo}`;
                 modoForm.style.color = '#10b981';
-                inputNombre.focus();
-                alert(`El código ${codigo} no está registrado. Por favor completa los datos abajo para guardarlo.`);
+                inputNombre.value = '';
+                btnSubmitText.textContent = "Guardar Producto en el Sistema";
+                alert(`Código ${codigo} nuevo. Completa el nombre para darlo de alta.`);
             }
+            inputNombre.focus();
         }
 
-        // Dinámica del formulario de categorías
-        categoriaSelect.addEventListener('change', (e) => {
-            if (e.target.value === 'legumbre_sin_cad') {
-                labelFecha1.textContent = "Fecha de Elaboración";
-                fecha2Container.classList.add('hidden');
-                fecha2Input.required = false;
-            } else {
-                labelFecha1.textContent = e.target.value === 'legumbre_con_cad' ? "Fecha de Elaboración" : "Fecha de Ingreso/Elaboración";
-                fecha2Container.classList.remove('hidden');
-                fecha2Input.required = true;
-                labelFecha2.textContent = "Fecha de Caducidad";
-            }
-        });
+        inputBuscador.addEventListener('input', renderizarTablas);
 
-        // Registrar producto nuevo
         document.getElementById('productForm').addEventListener('submit', (e) => {
             e.preventDefault();
             
             const codigo = codigoBarraGuardar.value || 'SIN-CODIGO-' + Date.now();
-            const nombre = inputNombre.value;
+            const nombre = inputNombre.value.trim();
             const categoria = categoriaSelect.value;
-            const fecha1 = document.getElementById('fecha1').value;
-            const fecha2 = document.getElementById('fecha2').value;
+            const fechaStr = fechaPrincipalInput.value;
+            const elaboracionStr = fechaElaboracionInput.value || 'N/A';
 
-            let fechaRetiro = new Date(fecha1 + 'T00:00:00');
+            let fechaRetiro = new Date(fechaStr + 'T00:00:00');
 
             if (categoria === 'legumbre_sin_cad') {
                 fechaRetiro.setDate(fechaRetiro.getDate() + 8);
-            } else {
-                fechaRetiro = new Date(fecha2 + 'T00:00:00');
-                if (categoria === 'legumbre_con_cad') {
-                    fechaRetiro.setDate(fechaRetiro.getDate() - 2);
-                } else if (categoria === 'frio') {
-                    fechaRetiro.setDate(fechaRetiro.getDate() - 5);
-                } else if (categoria === 'percha') {
-                    fechaRetiro.setDate(fechaRetiro.getDate() - 3);
-                }
+            } else if (categoria === 'legumbre_con_cad') {
+                fechaRetiro.setDate(fechaRetiro.getDate() - 2);
+            } else if (categoria === 'frio') {
+                fechaRetiro.setDate(fechaRetiro.getDate() - 5);
+            } else if (categoria === 'percha') {
+                fechaRetiro.setDate(fechaRetiro.getDate() - 3);
             }
 
             const nuevoProducto = {
@@ -291,8 +315,8 @@
                 codigo,
                 nombre,
                 categoria,
-                fecha1,
-                fecha2: categoria === 'legumbre_sin_cad' ? 'N/A' : fecha2,
+                fechaPrincipal: fechaStr,
+                elaboracion: elaboracionStr,
                 fechaRetiro: fechaRetiro.toISOString().split('T')[0]
             };
 
@@ -300,10 +324,9 @@
             guardarYRenderizar();
             e.target.reset();
             codigoBarraGuardar.value = '';
-            fecha2Container.classList.add('hidden');
-            labelFecha1.textContent = "Fecha de Elaboración";
             modoForm.textContent = "Modo: Ingreso manual o pistola";
             modoForm.style.color = '#0284c7';
+            btnSubmitText.textContent = "Guardar Producto en el Sistema";
             inputCodigo.focus();
         });
 
@@ -323,8 +346,13 @@
             });
 
             const hoy = new Date().toISOString().split('T')[0];
+            const filtroTexto = inputBuscador.value.toLowerCase().trim();
 
-            productos.forEach(p => {
+            const productosFiltrados = productos.filter(p => 
+                p.nombre.toLowerCase().includes(filtroTexto) || p.codigo.toLowerCase().includes(filtroTexto)
+            );
+
+            productosFiltrados.forEach(p => {
                 const tbody = document.getElementById(`lista-${p.categoria}`);
                 if (!tbody) return;
 
@@ -343,7 +371,7 @@
                         <div style="font-weight: 500;">${p.nombre}</div>
                         <div style="font-size: 10px; color: #6b7280;">Cod: ${p.codigo}</div>
                     </td>
-                    <td>${p.fecha2 !== 'N/A' ? p.fecha2 : p.fecha1}</td>
+                    <td>${p.fechaPrincipal}</td>
                     <td style="font-weight: bold; color: #2563eb;">${p.fechaRetiro}</td>
                     <td>${estadoBadge}</td>
                     <td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button></td>
@@ -352,18 +380,14 @@
             });
         }
 
-        // Configuración de la cámara con QuaggaJS para lectura móvil
         let camaraActiva = false;
         const btnToggleCam = document.getElementById('btnToggleCam');
         const btnCerrarCam = document.getElementById('btnCerrarCam');
         const viewport = document.getElementById('interactive');
 
         btnToggleCam.addEventListener('click', () => {
-            if (!camaraActiva) {
-                iniciarCamara();
-            } else {
-                apagarCamara();
-            }
+            if (!camaraActiva) iniciarCamara();
+            else apagarCamara();
         });
 
         btnCerrarCam.addEventListener('click', apagarCamara);
@@ -375,24 +399,10 @@
             camaraActiva = true;
 
             Quagga.init({
-                inputStream : {
-                    name : "Live",
-                    type : "LiveStream",
-                    target: viewport,
-                    constraints: {
-                        facingMode: "environment" // Usa la cámara trasera del teléfono
-                    }
-                },
-                decoder : {
-                    readers : ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader"]
-                }
+                inputStream : { name : "Live", type : "LiveStream", target: viewport, constraints: { facingMode: "environment" } },
+                decoder : { readers : ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader"] }
             }, function(err) {
-                if (err) {
-                    console.error(err);
-                    alert("No se pudo iniciar la cámara. Revisa los permisos.");
-                    apagarCamara();
-                    return;
-                }
+                if (err) { alert("Error al abrir cámara"); apagarCamara(); return; }
                 Quagga.start();
             });
 
