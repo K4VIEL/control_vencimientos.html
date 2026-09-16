@@ -104,7 +104,7 @@
         <header>
             <div>
                 <h1>Control en Línea (Tiempo Real)</h1>
-                <p>Sincronizado en la nube con Supabase (Registros Independientes).</p>
+                <p>Sincronizado en la nube con Supabase (Autocompletado inteligente).</p>
             </div>
             <div class="badge">
                 ☁️ Estado: Conectado a la Nube
@@ -132,7 +132,7 @@
 
                     <div class="search-box">
                         <label style="font-weight: 600; color: #047857;">Buscar Producto en el Sistema</label>
-                        <input type="text" id="inputBuscador" placeholder="Escribe el nombre o código...">
+                        <input type="text" id="inputBuscador" placeholder="Escribe el nombre o código para filtrar...">
                     </div>
                 </div>
 
@@ -321,7 +321,7 @@
         }
 
         function verificarHorarioNotificacion() {
-            const ahora = new Date();
+            constahora = new Date();
             const horas = ahora.getHours();
             const minutos = ahora.getMinutes();
             const tiempoMinutos = horas * 60 + minutos;
@@ -363,14 +363,34 @@
             }
         });
 
+        // Autocompletar al escribir o escanear en el campo del formulario de código
+        codigoInputForm.addEventListener('input', (e) => {
+            const codigo = e.target.value.trim();
+            verificarAutocompletadoCodigo(codigo);
+        });
+
         inputCodigo.addEventListener('input', (e) => {
             const codigo = e.target.value.trim();
-            if (codigo.length >= 3) {
+            if (codigo.length >= 2) {
                 codigoInputForm.value = codigo;
-                modoForm.textContent = `Código escaneado: ${codigo} (Se creará un nuevo registro)`;
-                modoForm.style.color = '#10b981';
+                verificarAutocompletadoCodigo(codigo);
             }
         });
+
+        function verificarAutocompletadoCodigo(codigo) {
+            if (!codigo) return;
+            // Buscar si ya existe este código en registros previos para autocompletar nombre y categoría
+            const existente = productos.find(p => p.codigo === codigo);
+            if (existente) {
+                inputNombre.value = existente.nombre;
+                categoriaSelect.value = existente.categoria;
+                modoForm.textContent = `⚡ Producto reconocido: Autocompletado (${existente.nombre}). Ingrese nueva fecha.`;
+                modoForm.style.color = '#10b981';
+            } else {
+                modoForm.textContent = `Modo: Ingreso manual o pistola (Nuevo producto)`;
+                modoForm.style.color = '#0284c7';
+            }
+        }
 
         inputBuscador.addEventListener('input', renderizarTablas);
 
@@ -396,7 +416,6 @@
                 fecha_retiro: fechaRetiro.toISOString().split('T')[0]
             };
 
-            // Inserta siempre un registro independiente nuevo
             const { error } = await supabaseClient.from('productos_sistema').insert([objetoSupabase]);
             
             if (error) {
@@ -409,7 +428,7 @@
             modoForm.textContent = "Modo: Ingreso manual o pistola";
             modoForm.style.color = '#0284c7';
             inputCodigo.focus();
-            mostrarToast('¡Nuevo registro guardado exitosamente!');
+            mostrarToast('¡Nuevo lote guardado exitosamente!');
             cargarDatos();
         });
 
@@ -524,10 +543,22 @@
                     <td>${p.fecha_principal}</td>
                     <td style="font-weight: bold; color: #2563eb;">${p.fecha_retiro}</td>
                     <td>${estadoBadge}</td>
-                    <td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button></td>
+                    <td>
+                        <button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button> | 
+                        <button style="background:none; border:none; color:#2563eb; cursor:pointer;" onclick="precargarFormulario('${p.codigo}', '${p.nombre.replace(/'/g, "\\'")}', '${p.categoria}')">Usar</button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        function precargarFormulario(codigo, nombre, categoria) {
+            codigoInputForm.value = codigo;
+            inputNombre.value = nombre;
+            categoriaSelect.value = categoria;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            mostrarToast(`¡Datos cargados para nuevo lote de ${nombre}!`);
+            fechaPrincipalInput.focus();
         }
 
         let camaraActiva = false;
@@ -539,8 +570,7 @@
             if (!camaraActiva) iniciarCamara(viewport, btnCerrarCam, btnToggleCam, (codigo) => {
                 inputCodigo.value = codigo;
                 codigoInputForm.value = codigo;
-                modoForm.textContent = `Código escaneado: ${codigo} (Nuevo registro)`;
-                modoForm.style.color = '#10b981';
+                verificarAutocompletadoCodigo(codigo);
             });
             else apagarCamara();
         });
