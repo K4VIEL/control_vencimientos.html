@@ -32,11 +32,8 @@
         .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; }
         .card h2 { font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
         
-        .tools-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
-        @media(min-width: 768px) { .tools-grid { grid-template-columns: 1fr 1fr; } }
-        
         .scan-box { background: #eff6ff; border: 2px dashed #3b82f6; padding: 14px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .search-box { background: #f0fdf4; border: 2px dashed #10b981; padding: 14px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .search-box-standalone { background: #f0fdf4; border: 2px dashed #10b981; padding: 16px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 8px; }
         
         input, select { width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 10px; font-size: 13px; outline: none; background: #fff; }
         input:focus, select:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.2); }
@@ -116,29 +113,25 @@
 
         <!-- SECCIÓN 1: VENCIMIENTOS -->
         <div id="seccion-vencimientos">
+            <!-- Formulario de Registro -->
             <div class="card">
                 <h2>
                     <span>Registrar Producto</span>
                     <span id="modoForm" style="font-size: 12px; color: #0284c7; font-weight: normal;">Modo: Ingreso manual o pistola</span>
                 </h2>
 
-                <div class="tools-grid">
+                <div class="tools-grid" style="grid-template-columns: 1fr;">
                     <div class="scan-box">
                         <label style="font-weight: 600; color: #1e40af;">Escanear / Ingresar Código de Barras</label>
                         <input type="text" id="codigoEscaneado" placeholder="Pasa la pistola o escribe aquí..." autofocus>
                         <button type="button" id="btnToggleCam" class="btn-camara">📷 Usar Cámara Celular</button>
-                    </div>
-
-                    <div class="search-box">
-                        <label style="font-weight: 600; color: #047857;">Buscar Producto en el Sistema</label>
-                        <input type="text" id="inputBuscador" placeholder="Escribe el nombre o código para filtrar...">
                     </div>
                 </div>
 
                 <div id="interactive" class="viewport"></div>
                 <button type="button" id="btnCerrarCam" class="hidden" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
 
-                <!-- Formulario Único con un solo campo de código -->
+                <!-- Formulario Único -->
                 <form id="productForm" class="form-grid">
                     <input type="hidden" id="codigoBarraGuardar">
                     <div class="form-group">
@@ -163,6 +156,12 @@
                     </div>
                     <button type="submit" class="btn-submit" id="btnSubmitText">Guardar en la Nube</button>
                 </form>
+            </div>
+
+            <!-- BUSCADOR INDEPENDIENTE ARRIBA DE LAS SECCIONES -->
+            <div class="search-box-standalone">
+                <label style="font-weight: 600; color: #047857; font-size: 14px;">🔍 Buscar Producto en el Sistema</label>
+                <input type="text" id="inputBuscador" placeholder="Escribe el nombre o código para filtrar todas las secciones..." style="font-size: 14px; padding: 10px 12px;">
             </div>
 
             <!-- Secciones -->
@@ -359,7 +358,6 @@
             }
         });
 
-        // Escanear o escribir en el buscador principal autocompleta y llena los datos
         inputCodigo.addEventListener('input', (e) => {
             const codigo = e.target.value.trim();
             if (codigo.length >= 2) procesarCodigoLeido(codigo);
@@ -383,7 +381,7 @@
 
         inputBuscador.addEventListener('input', renderizarTablas);
 
-        // Guardar Vencimiento en Supabase (Cada registro es independiente)
+        // Guardar Vencimiento en Supabase
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const codigo = codigoBarraGuardar.value || inputCodigo.value.trim() || ('CODE-' + Math.floor(100000 + Math.random() * 900000));
