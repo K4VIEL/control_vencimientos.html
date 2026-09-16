@@ -40,8 +40,8 @@
         .btn-camara { background: #0284c7; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: fit-content; }
         .btn-camara:hover { background: #0369a1; }
 
-        #interactive.viewport { position: relative; width: 100%; height: 220px; border: 2px solid #3b82f6; border-radius: 8px; overflow: hidden; margin-bottom: 12px; background: #000; display: none; }
-        #interactive.viewport canvas, #interactive.viewport video { width: 100%; height: 100%; object-fit: cover; }
+        #interactive.viewport, #interactiveSolicitud.viewport { position: relative; width: 100%; height: 220px; border: 2px solid #3b82f6; border-radius: 8px; overflow: hidden; margin-bottom: 12px; background: #000; display: none; }
+        #interactive.viewport canvas, #interactive.viewport video, #interactiveSolicitud.viewport canvas, #interactiveSolicitud.viewport video { width: 100%; height: 100%; object-fit: cover; }
 
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
         @media(min-width: 768px) { .form-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -71,7 +71,6 @@
         .btn-delete { color: #ef4444; background: none; border: none; font-weight: 500; cursor: pointer; }
         .btn-delete:hover { color: #b91c1c; text-decoration: underline; }
 
-        /* Estilos independientes para Solicitudes de Precio */
         .price-request-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .barcode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 16px; }
         .barcode-item { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
@@ -232,26 +231,28 @@
             </div>
         </div>
 
-        <!-- SECCIÓN 2: SOLICITUDES DE PRECIO INDEPENDIENTE -->
+        <!-- SECCIÓN 2: SOLICITUDES DE PRECIO (SOLO CÓDIGO Y CANTIDAD + CÁMARA) -->
         <div id="seccion-solicitudes" class="hidden-section">
             <div class="price-request-card">
                 <h2>Apartado de Solicitudes de Precio</h2>
                 <div class="counter-badge" id="textoContadorPrecios">Tienes 0 solicitudes pendientes</div>
-                <p style="color: #64748b; font-size: 13px; margin-bottom: 16px;">Escanea o escribe el código de barras, indica cuántas etiquetas necesitas y se generará la tarjeta visual para los impresores. Una vez impresas, elimínalas para mantener la lista limpia.</p>
+                <p style="color: #64748b; font-size: 13px; margin-bottom: 16px;">Escanea o escribe el código de barras y cuántas etiquetas necesitas. Una vez impresas, elimínalas para mantener la lista limpia.</p>
                 
-                <!-- Formulario de Solicitud Independiente -->
+                <!-- Formulario Independiente de Solicitudes -->
                 <div class="card" style="background: #f8fafc; border: 1px solid #cbd5e1; margin-bottom: 20px;">
-                    <form id="formSolicitudPrecio" class="form-grid" style="grid-template-columns: 1fr 1fr 1fr auto;">
+                    <div style="margin-bottom: 12px;">
+                        <button type="button" id="btnToggleCamSolicitud" class="btn-camara">📷 Escanear con Cámara del Teléfono</button>
+                    </div>
+                    <div id="interactiveSolicitud" class="viewport"></div>
+                    <button type="button" id="btnCerrarCamSolicitud" class="hidden" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
+
+                    <form id="formSolicitudPrecio" class="form-grid" style="grid-template-columns: 2fr 1fr auto;">
                         <div class="form-group">
                             <label>Código de Barras</label>
                             <input type="text" id="solCodigo" required placeholder="Escanea o escribe código...">
                         </div>
                         <div class="form-group">
-                            <label>Nombre del Producto</label>
-                            <input type="text" id="solNombre" required placeholder="Nombre del producto...">
-                        </div>
-                        <div class="form-group">
-                            <label>¿Cuántas etiquetas necesitas?</label>
+                            <label>Cantidad</label>
                             <input type="number" id="solCantidad" min="1" value="1" required>
                         </div>
                         <div style="display: flex; align-items: flex-end;">
@@ -261,9 +262,7 @@
                 </div>
 
                 <!-- Lista de Códigos de Barras Generados para Impresión -->
-                <div class="barcode-grid" id="gridSolicitudesPrecio">
-                    <!-- Aquí se cargan dinámicamente -->
-                </div>
+                <div class="barcode-grid" id="gridSolicitudesPrecio"></div>
             </div>
         </div>
     </div>
@@ -285,7 +284,6 @@
         const alertaHorario = document.getElementById('alertaHorario');
         
         const solCodigo = document.getElementById('solCodigo');
-        const solNombre = document.getElementById('solNombre');
         const solCantidad = document.getElementById('solCantidad');
         const contadorSolicitudes = document.getElementById('contadorSolicitudes');
         const textoContadorPrecios = document.getElementById('textoContadorPrecios');
@@ -388,17 +386,15 @@
             inputCodigo.focus();
         });
 
-        // Formulario Independiente de Solicitudes de Precio
+        // Formulario Independiente de Solicitudes de Precio (Solo Código y Cantidad)
         document.getElementById('formSolicitudPrecio').addEventListener('submit', (e) => {
             e.preventDefault();
             const codigo = solCodigo.value.trim();
-            const nombre = solNombre.value.trim();
             const cantidad = parseInt(solCantidad.value) || 1;
 
             const nuevaSolicitud = {
                 id: Date.now(),
                 codigo,
-                nombre,
                 cantidad
             };
 
@@ -442,7 +438,7 @@
                 gridSolicitudesPrecio.innerHTML = `
                     <div style="grid-column: 1/-1; text-align: center; padding: 30px; background: #f8fafc; border-radius: 8px;">
                         <p style="color: #64748b; font-weight: 500; margin-bottom: 6px;">No hay solicitudes de precios pendientes.</p>
-                        <p style="color: #94a3b8; font-size: 12px;">Usa el formulario de arriba para agregar códigos y cuántas etiquetas necesitas imprimir.</p>
+                        <p style="color: #94a3b8; font-size: 12px;">Usa la cámara o escribe el código y cuántas etiquetas necesitas imprimir.</p>
                     </div>`;
                 return;
             }
@@ -451,13 +447,12 @@
                 const div = document.createElement('div');
                 div.className = 'barcode-item';
                 div.innerHTML = `
-                    <div style="font-weight: bold; font-size: 14px; color: #1e293b;">${s.nombre}</div>
-                    <div style="font-size: 12px; color: #2563eb; font-weight: 600;">Cantidad a imprimir: ${s.cantidad} etiqueta(s)</div>
+                    <div style="font-size: 12px; color: #2563eb; font-weight: 600;">Cantidad: ${s.cantidad} etiqueta(s)</div>
                     <div style="font-size: 11px; color: #64748b;">Cod: ${s.codigo}</div>
                     <div class="barcode-box">
                         <svg id="sol-barcode-${s.id}"></svg>
                     </div>
-                    <button onclick="eliminarSolicitudPrecio(${s.id})" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; width: 100%;">Impreso / Eliminar de la lista</button>
+                    <button onclick="eliminarSolicitudPrecio(${s.id})" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; width: 100%;">Impreso / Eliminar</button>
                 `;
                 gridSolicitudesPrecio.appendChild(div);
 
@@ -516,25 +511,75 @@
             });
         }
 
+        // Cámara principal (Vencimientos)
         let camaraActiva = false;
         const btnToggleCam = document.getElementById('btnToggleCam');
         const btnCerrarCam = document.getElementById('btnCerrarCam');
         const viewport = document.getElementById('interactive');
 
         btnToggleCam.addEventListener('click', () => {
-            if (!camaraActiva) iniciarCamara();
+            if (!camaraActiva) iniciarCamara(viewport, btnCerrarCam, btnToggleCam, (codigo) => {
+                inputCodigo.value = codigo;
+                procesarCodigoLeido(codigo);
+            });
             else apagarCamara();
         });
         btnCerrarCam.addEventListener('click', apagarCamara);
 
-        function iniciarCamara() {
-            viewport.style.display = 'block';
-            btnCerrarCam.classList.remove('hidden');
-            btnToggleCam.textContent = "Apagar Cámara";
+        // Cámara para Solicitudes de Precio
+        let camaraSolicitudActiva = false;
+        const btnToggleCamSolicitud = document.getElementById('btnToggleCamSolicitud');
+        const btnCerrarCamSolicitud = document.getElementById('btnCerrarCamSolicitud');
+        const viewportSolicitud = document.getElementById('interactiveSolicitud');
+
+        btnToggleCamSolicitud.addEventListener('click', () => {
+            if (!camaraSolicitudActiva) {
+                viewportSolicitud.style.display = 'block';
+                btnCerrarCamSolicitud.classList.remove('hidden');
+                btnToggleCamSolicitud.textContent = "Apagar Cámara";
+                camaraSolicitudActiva = true;
+
+                Quagga.init({
+                    inputStream : { name : "Live", type : "LiveStream", target: viewportSolicitud, constraints: { facingMode: "environment" } },
+                    decoder : { readers : ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader"] }
+                }, function(err) {
+                    if (err) { alert("Error al abrir cámara"); apagarCamaraSolicitud(); return; }
+                    Quagga.start();
+                });
+
+                Quagga.onDetected(function(result) {
+                    const codigo = result.codeResult.code;
+                    if (codigo) {
+                        solCodigo.value = codigo;
+                        apagarCamaraSolicitud();
+                        solCantidad.focus();
+                    }
+                });
+            } else {
+                apagarCamaraSolicitud();
+            }
+        });
+
+        btnCerrarCamSolicitud.addEventListener('click', apagarCamaraSolicitud);
+
+        function apagarCamaraSolicitud() {
+            if (camaraSolicitudActiva) {
+                Quagga.stop();
+                viewportSolicitud.style.display = 'none';
+                btnCerrarCamSolicitud.classList.add('hidden');
+                btnToggleCamSolicitud.textContent = "📷 Escanear con Cámara del Teléfono";
+                camaraSolicitudActiva = false;
+            }
+        }
+
+        function iniciarCamara(targetViewport, closeBtn, toggleBtn, callback) {
+            targetViewport.style.display = 'block';
+            closeBtn.classList.remove('hidden');
+            toggleBtn.textContent = "Apagar Cámara";
             camaraActiva = true;
 
             Quagga.init({
-                inputStream : { name : "Live", type : "LiveStream", target: viewport, constraints: { facingMode: "environment" } },
+                inputStream : { name : "Live", type : "LiveStream", target: targetViewport, constraints: { facingMode: "environment" } },
                 decoder : { readers : ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader"] }
             }, function(err) {
                 if (err) { alert("Error al abrir cámara"); apagarCamara(); return; }
@@ -544,9 +589,8 @@
             Quagga.onDetected(function(result) {
                 const codigo = result.codeResult.code;
                 if (codigo) {
-                    inputCodigo.value = codigo;
                     apagarCamara();
-                    procesarCodigoLeido(codigo);
+                    callback(codigo);
                 }
             });
         }
