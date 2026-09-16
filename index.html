@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Control en Línea - Sistema de Roles</title>
     <!-- Librerías de Supabase, Quagga y JsBarcode -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -10,81 +10,84 @@
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
         :root {
-            --bg-color: #f3f4f6;
+            --bg-color: #f1f5f9;
             --card-bg: #ffffff;
-            --text-color: #1f2937;
-            --text-muted: #6b7280;
-            --border-color: #d1d5db;
+            --text-color: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
             --primary-color: #2563eb;
             --primary-hover: #1d4ed8;
             --header-bg: #ffffff;
-            --table-th-bg: #f9fafb;
-            --table-border: #e5e7eb;
+            --table-th-bg: #f8fafc;
+            --table-border: #e2e8f0;
         }
 
         [data-theme="dark"] {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
+            --bg-color: #090d16;
+            --card-bg: #131c2e;
             --text-color: #f8fafc;
             --text-muted: #94a3b8;
-            --border-color: #334155;
+            --border-color: #2a3958;
             --primary-color: #dc2626;
             --primary-hover: #b91c1c;
-            --header-bg: #1e293b;
-            --table-th-bg: #0f172a;
-            --table-border: #334155;
+            --header-bg: #131c2e;
+            --table-th-bg: #090d16;
+            --table-border: #1e293b;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; transition: background-color 0.3s, color 0.3s; }
-        body { background-color: var(--bg-color); color: var(--text-color); padding: 16px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-color); color: var(--text-color); padding: 10px; font-size: 14px; }
         .container { max-width: 1200px; margin: 0 auto; }
         
-        #alertaHorario { display: none; background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        #toastExito { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; z-index: 1000; }
+        #alertaHorario { display: none; background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; padding: 12px; border-radius: 12px; margin-bottom: 16px; font-weight: bold; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        #toastExito { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #10b981; color: white; padding: 12px 20px; border-radius: 12px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.25); display: none; z-index: 2000; text-align: center; width: 90%; max-width: 400px; }
 
-        header { background: var(--header-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px; position: relative; }
-        @media(min-width: 768px) { header { flex-direction: row; justify-content: space-between; align-items: center; } }
-        h1 { font-size: 20px; font-weight: bold; color: var(--text-color); }
-        p { font-size: 13px; color: var(--text-muted); }
+        header { background: var(--header-bg); padding: 14px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 16px; display: flex; flex-direction: column; gap: 12px; }
+        @media(min-width: 768px) { header { flex-direction: row; justify-content: space-between; align-items: center; padding: 20px; } }
+        h1 { font-size: 18px; font-weight: 800; color: var(--text-color); }
+        p { font-size: 12px; color: var(--text-muted); }
         
-        .badge { background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 500; display: inline-block; }
+        .badge { background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; }
         [data-theme="dark"] .badge { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
 
-        .theme-toggle { background: var(--primary-color); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 6px; width: fit-content; }
+        .theme-toggle { background: var(--primary-color); color: white; border: none; padding: 10px 14px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; }
+        @media(min-width: 768px) { .theme-toggle { width: fit-content; } }
         
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tab-btn { background: var(--border-color); border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-color); display: inline-block; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 0; overflow-x: auto; padding-bottom: 4px; width: 100%; -webkit-overflow-scrolling: touch; }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab-btn { background: var(--border-color); border: none; padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-color); white-space: nowrap; flex-shrink: 0; }
         .tab-btn.active { background: var(--primary-color); color: white; }
         .hidden-tab { display: none !important; }
 
-        .card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; }
-        .card h2 { font-size: 16px; font-weight: 600; color: var(--text-color); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .card { background: var(--card-bg); padding: 14px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 16px; }
+        .card h2 { font-size: 15px; font-weight: 700; color: var(--text-color); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
         
-        .tools-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
-        @media(min-width: 768px) { .tools-grid { grid-template-columns: 1fr 1fr; } }
+        .tools-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; }
         
-        .scan-box { background: var(--bg-color); border: 2px dashed var(--primary-color); padding: 14px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .search-box-standalone { background: var(--card-bg); border: 2px dashed #10b981; padding: 16px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 8px; }
+        .scan-box { background: var(--bg-color); border: 2px dashed var(--primary-color); padding: 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .search-box-standalone { background: var(--card-bg); border: 2px dashed #10b981; padding: 14px; border-radius: 14px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 8px; }
         
-        input, select { width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 10px; font-size: 13px; outline: none; background: var(--card-bg); color: var(--text-color); }
-        input:focus, select:focus { border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(220,38,38,0.2); }
+        input, select { width: 100%; border: 1px solid var(--border-color); border-radius: 10px; padding: 11px 12px; font-size: 14px; outline: none; background: var(--card-bg); color: var(--text-color); -webkit-appearance: none; }
+        input:focus, select:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(220,38,38,0.15); }
         
-        .btn-camara { background: #0284c7; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: fit-content; }
+        .btn-camara { background: #0284c7; color: white; border: none; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; }
+        @media(min-width: 768px) { .btn-camara { width: fit-content; } }
         
-        #interactive, #interactiveSolicitud, #interactiveDestruccion { position: relative; width: 100%; height: 220px; border: 2px solid var(--primary-color); border-radius: 8px; overflow: hidden; margin-bottom: 12px; background: #000; display: none; }
+        #interactive, #interactiveSolicitud, #interactiveDestruccion { position: relative; width: 100%; height: 240px; border: 2px solid var(--primary-color); border-radius: 12px; overflow: hidden; margin-bottom: 12px; background: #000; display: none; }
         #interactive canvas, #interactive video, #interactiveSolicitud canvas, #interactiveSolicitud video, #interactiveDestruccion canvas, #interactiveDestruccion video { width: 100%; height: 100%; object-fit: cover; }
 
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
         @media(min-width: 768px) { .form-grid { grid-template-columns: repeat(4, 1fr); } }
-        .form-group { display: flex; flex-direction: column; gap: 4px; }
-        label { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
         
-        .btn-submit { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; grid-column: 1 / -1; justify-self: end; }
+        .btn-submit { background: #10b981; color: white; border: none; padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 4px; }
+        @media(min-width: 768px) { .btn-submit { grid-column: 1 / -1; justify-self: end; width: auto; } }
         
-        .grid-sections { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        .grid-sections { display: grid; grid-template-columns: 1fr; gap: 16px; }
         @media(min-width: 1024px) { .grid-sections { grid-template-columns: repeat(2, 1fr); } }
         
-        .section-card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid #ccc; margin-bottom: 20px; }
+        .section-card { background: var(--card-bg); padding: 16px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-top: 5px solid #ccc; margin-bottom: 16px; }
         .border-urgente { border-top-color: #ef4444; }
         .border-frio { border-top-color: #0ea5e9; }
         .border-legsin { border-top-color: #f59e0b; }
@@ -94,35 +97,39 @@
         .border-pasillo3 { border-top-color: #84cc16; }
         .border-pasillo5 { border-top-color: #8b5cf6; }
 
-        .table-responsive { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; color: var(--text-color); }
-        th, td { padding: 8px; border-bottom: 1px solid var(--table-border); }
-        th { background: var(--table-th-bg); color: var(--text-muted); }
-        .badge-status { padding: 3px 8px; border-radius: 9999px; font-weight: 600; font-size: 11px; display: inline-block; }
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 8px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; color: var(--text-color); white-space: nowrap; }
+        th, td { padding: 10px 8px; border-bottom: 1px solid var(--table-border); }
+        th { background: var(--table-th-bg); color: var(--text-muted); font-weight: 600; }
+        
+        .badge-status { padding: 4px 8px; border-radius: 9999px; font-weight: 700; font-size: 10px; display: inline-block; }
         .bg-red { background: #fee2e2; color: #b91c1c; }
         .bg-amber { background: #fef3c7; color: #b45309; }
         .bg-green { background: #d1fae5; color: #047857; }
-        .btn-delete { color: #ef4444; background: none; border: none; font-weight: 500; cursor: pointer; }
-        .btn-edit { color: var(--primary-color); background: none; border: none; font-weight: 500; cursor: pointer; margin-right: 8px; }
+        
+        .btn-delete { color: #ef4444; background: rgba(239,68,68,0.1); border: none; padding: 6px 10px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12px; }
+        .btn-edit { color: var(--primary-color); background: rgba(37,99,235,0.1); border: none; padding: 6px 10px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12px; margin-right: 4px; }
 
-        .price-request-card, .destruction-card, .usuarios-card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .barcode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 16px; }
-        .barcode-item { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-        .barcode-box { background: white; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; display: flex; justify-content: center; }
-        .counter-badge { background: #dbeafe; color: #1e40af; padding: 6px 16px; border-radius: 99px; font-weight: bold; font-size: 13px; display: inline-block; margin-bottom: 12px; }
+        .price-request-card, .destruction-card, .usuarios-card { background: var(--card-bg); padding: 16px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .barcode-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 14px; }
+        @media(min-width: 640px) { .barcode-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); } }
+        
+        .barcode-item { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .barcode-box { background: white; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; display: flex; justify-content: center; }
+        .counter-badge { background: #dbeafe; color: #1e40af; padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: 12px; display: inline-block; margin-bottom: 12px; }
         [data-theme="dark"] .counter-badge { background: #450a0a; color: #fca5a5; }
         .hidden-section { display: none !important; }
         
-        #loginScreen { max-width: 400px; margin: 80px auto; background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        #loginScreen { max-width: 380px; margin: 60px auto; background: var(--card-bg); padding: 24px; border-radius: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body data-theme="light">
 
     <!-- PANTALLA DE LOGIN -->
     <div id="loginScreen" class="hidden-section">
-        <h2 style="margin-bottom: 6px; text-align: center; color: var(--text-color);">Control de Tienda</h2>
-        <p style="text-align: center; color: var(--text-muted); margin-bottom: 20px; font-size: 12px;">Ingrese su usuario y clave laboral</p>
-        <form id="loginForm" style="display: flex; flex-direction: column; gap: 12px;">
+        <h2 style="margin-bottom: 6px; text-align: center; color: var(--text-color); font-size: 22px;">Control de Tienda</h2>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 20px; font-size: 13px;">Ingrese su usuario y clave laboral</p>
+        <form id="loginForm" style="display: flex; flex-direction: column; gap: 14px;">
             <div class="form-group">
                 <label>Usuario</label>
                 <input type="text" id="loginUsuario" required placeholder="Ej: admin, encargado1">
@@ -131,9 +138,9 @@
                 <label>Clave Laboral</label>
                 <input type="password" id="loginClave" required placeholder="********">
             </div>
-            <button type="submit" class="btn-submit" style="width: 100%; justify-self: center; margin-top: 10px;">Ingresar</button>
+            <button type="submit" class="btn-submit" style="margin-top: 8px;">Ingresar al Sistema</button>
         </form>
-        <div id="loginError" style="color: #ef4444; font-size: 12px; margin-top: 10px; text-align: center;"></div>
+        <div id="loginError" style="color: #ef4444; font-size: 12px; margin-top: 12px; text-align: center; font-weight: 600;"></div>
     </div>
 
     <!-- APLICACIÓN PRINCIPAL -->
@@ -146,15 +153,15 @@
                 <h1 id="tituloBienvenida">Control en Línea</h1>
                 <p>Usuario: <span id="spanUserBadge" style="font-weight: bold; color: var(--primary-color);">...</span> | Rol: <span id="spanRol" class="badge" style="font-weight: bold;">...</span></p>
             </div>
-            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <button class="theme-toggle" onclick="alternarTema()">🌓 Cambiar Tema</button>
-                <button onclick="cerrarSesion()" style="background: #ef4444; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold;">Cerrar Sesión</button>
+            <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+                <button class="theme-toggle" onclick="alternarTema()">🌓 Tema</button>
+                <button onclick="cerrarSesion()" style="background: #ef4444; color: white; border: none; padding: 10px 14px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: bold; width: 100%;">Salir</button>
             </div>
-            <div class="tabs" style="margin-top: 10px; width: 100%;">
-                <button class="tab-btn active" onclick="cambiarTab('vencimientos')">📦 Control de Retiros</button>
-                <button class="tab-btn" onclick="cambiarTab('solicitudes')">🏷️ Solicitudes de Precio (<span id="contadorSolicitudes">0</span>)</button>
+            <div class="tabs" style="margin-top: 4px;">
+                <button class="tab-btn active" onclick="cambiarTab('vencimientos')">📦 Retiros</button>
+                <button class="tab-btn" onclick="cambiarTab('solicitudes')">🏷️ Precios (<span id="contadorSolicitudes">0</span>)</button>
                 <button class="tab-btn hidden-tab" id="tabBtnDestruccion" onclick="cambiarTab('destruccion')">🗑️ Destrucción (<span id="contadorDestruccion">0</span>)</button>
-                <button class="tab-btn hidden-tab" id="tabBtnUsuarios" onclick="cambiarTab('usuarios')">👥 Gestión de Usuarios</button>
+                <button class="tab-btn hidden-tab" id="tabBtnUsuarios" onclick="cambiarTab('usuarios')">👥 Usuarios</button>
             </div>
         </header>
 
@@ -163,17 +170,17 @@
             <div class="card">
                 <h2>
                     <span>Registrar Producto</span>
-                    <span id="modoForm" style="font-size: 12px; color: var(--primary-color); font-weight: normal;">Modo: Ingreso manual o pistola</span>
+                    <span id="modoForm" style="font-size: 11px; color: var(--primary-color); font-weight: normal;">Modo: Manual o pistola</span>
                 </h2>
-                <div class="tools-grid" style="grid-template-columns: 1fr;">
+                <div class="tools-grid">
                     <div class="scan-box">
-                        <label style="font-weight: 600; color: var(--primary-color);">Escanear / Ingresar Código de Barras</label>
-                        <input type="text" id="codigoEscaneado" placeholder="Pasa la pistola o escribe aquí...">
+                        <label style="font-weight: 700; color: var(--primary-color);">Código de Barras</label>
+                        <input type="text" id="codigoEscaneado" placeholder="Pasa la pistola o escribe...">
                         <button type="button" id="btnToggleCam" class="btn-camara">📷 Usar Cámara Celular</button>
                     </div>
                 </div>
                 <div id="interactive"></div>
-                <button type="button" id="btnCerrarCam" class="hidden-section" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
+                <button type="button" id="btnCerrarCam" class="hidden-section" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; width: 100%; font-weight: bold;">Cerrar Cámara</button>
 
                 <form id="productForm" class="form-grid">
                     <input type="hidden" id="codigoBarraGuardar">
@@ -184,21 +191,21 @@
                     <div class="form-group">
                         <label>Categoría / Área / Pasillo</label>
                         <select id="categoria" required>
-                            <option value="frio">❄️ Nevera / Productos de Frío (Retiro 5 días antes)</option>
-                            <option value="legumbre_sin_cad">🌱 Legumbres (Solo elaboración - Retiro 8 días)</option>
-                            <option value="legumbre_con_cad">📦 Legumbres Empacadas (Retiro 2 días antes)</option>
-                            <option value="pasillo1">🛒 Pasillo 1: Limpieza (Retiro 3 días antes)</option>
-                            <option value="pasillo2">🍿 Pasillo 2: Snack (Retiro 3 días antes)</option>
-                            <option value="pasillo3">🌾 Pasillo 3: Granos (Retiro 3 días antes)</option>
-                            <option value="pasillo5">🔩 Pasillo 5: Ferri (Retiro 3 días antes)</option>
+                            <option value="frio">❄️ Nevera / Frío (-5 días)</option>
+                            <option value="legumbre_sin_cad">🌱 Legumbres Elaboración (-8 días)</option>
+                            <option value="legumbre_con_cad">📦 Legumbres Empacadas (-2 días)</option>
+                            <option value="pasillo1">🛒 Pasillo 1: Limpieza (-3 días)</option>
+                            <option value="pasillo2">🍿 Pasillo 2: Snack (-3 días)</option>
+                            <option value="pasillo3">🌾 Pasillo 3: Granos (-3 días)</option>
+                            <option value="pasillo5">🔩 Pasillo 5: Ferri (-3 días)</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Cantidad de Producto</label>
+                        <label>Cantidad</label>
                         <input type="number" id="cantidadProducto" min="1" value="1" required>
                     </div>
                     <div class="form-group">
-                        <label id="labelFecha">Fecha de Caducidad / Vencimiento</label>
+                        <label id="labelFecha">Fecha de Caducidad</label>
                         <input type="date" id="fechaPrincipal" required>
                     </div>
                     <button type="submit" class="btn-submit">Guardar en la Nube</button>
@@ -206,15 +213,15 @@
             </div>
 
             <div class="search-box-standalone">
-                <label style="font-weight: 600; color: #047857; font-size: 14px;">🔍 Buscar Producto en el Sistema</label>
-                <input type="text" id="inputBuscador" placeholder="Escribe el nombre o código para filtrar..." style="font-size: 14px; padding: 10px 12px;">
+                <label style="font-weight: 700; color: #047857; font-size: 13px;">🔍 Buscar Producto</label>
+                <input type="text" id="inputBuscador" placeholder="Escribe nombre o código para filtrar..." style="font-size: 13px; padding: 10px;">
             </div>
 
-            <div class="section-card border-urgente" style="margin-bottom: 24px;">
-                <h3 style="color: #b91c1c;">🚨 Productos Vencidos (Debieron Salir)</h3>
+            <div class="section-card border-urgente" style="margin-bottom: 16px;">
+                <h3 style="color: #b91c1c; font-size: 15px;">🚨 Productos Vencidos (Urgente)</h3>
                 <div class="table-responsive">
                     <table>
-                        <thead><tr><th>Código / Producto</th><th>Cant.</th><th>Área</th><th>F. Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
+                        <thead><tr><th>Producto</th><th>Cant.</th><th>Área</th><th>F. Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
                         <tbody id="lista-urgentes"></tbody>
                     </table>
                 </div>
@@ -222,32 +229,32 @@
 
             <div class="grid-sections">
                 <div class="section-card border-frio">
-                    <h3>❄️ Nevera / Productos de Frío</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Cant.</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-frio"></tbody></table></div>
+                    <h3 style="font-size: 14px;">❄️ Nevera / Frío</h3>
+                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-frio"></tbody></table></div>
                 </div>
                 <div class="section-card border-legsin">
-                    <h3>🌱 Legumbres (Sin caducidad)</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Cant.</th><th>Elaboración</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-legumbre_sin_cad"></tbody></table></div>
+                    <h3 style="font-size: 14px;">🌱 Legumbres (Sin cad.)</h3>
+                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Elab.</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-legumbre_sin_cad"></tbody></table></div>
                 </div>
                 <div class="section-card border-legcon">
-                    <h3>📦 Legumbres Empacadas</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Cant.</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-legumbre_con_cad"></tbody></table></div>
+                    <h3 style="font-size: 14px;">📦 Legumbres Empacadas</h3>
+                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-legumbre_con_cad"></tbody></table></div>
                 </div>
                 <div class="section-card border-pasillo1">
-                    <h3>🛒 Pasillo 1: Limpieza</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Cant.</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo1"></tbody></table></div>
+                    <h3 style="font-size: 14px;">🛒 Pasillo 1: Limpieza</h3>
+                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo1"></tbody></table></div>
                 </div>
                 <div class="section-card border-pasillo2">
-                    <h3>🍿 Pasillo 2: Snack</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Cant.</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo2"></tbody></table></div>
+                    <h3 style="font-size: 14px;">🍿 Pasillo 2: Snack</h3>
+                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo2"></tbody></table></div>
                 </div>
                 <div class="section-card border-pasillo3">
-                    <h3>🌾 Pasillo 3: Granos</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Cant.</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo3"></tbody></table></div>
+                    <h3 style="font-size: 14px;">🌾 Pasillo 3: Granos</h3>
+                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo3"></tbody></table></div>
                 </div>
                 <div class="section-card border-pasillo5">
-                    <h3>🔩 Pasillo 5: Ferri</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Cant.</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo5"></tbody></table></div>
+                    <h3 style="font-size: 14px;">🔩 Pasillo 5: Ferri</h3>
+                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo5"></tbody></table></div>
                 </div>
             </div>
         </div>
@@ -255,16 +262,16 @@
         <!-- SECCIÓN 2: SOLICITUDES DE PRECIO -->
         <div id="seccion-solicitudes" class="hidden-section">
             <div class="price-request-card">
-                <h2>Apartado de Solicitudes de Precio</h2>
+                <h2 style="font-size: 16px;">Solicitudes de Precio</h2>
                 <div class="counter-badge" id="textoContadorPrecios">Tienes 0 solicitudes pendientes</div>
-                <div class="card" style="background: var(--bg-color); border: 1px solid var(--border-color); margin-bottom: 20px;">
-                    <div style="margin-bottom: 12px;"><button type="button" id="btnToggleCamSolicitud" class="btn-camara">📷 Escanear con Cámara</button></div>
+                <div class="card" style="background: var(--bg-color); border: 1px solid var(--border-color); margin-bottom: 16px;">
+                    <div style="margin-bottom: 10px;"><button type="button" id="btnToggleCamSolicitud" class="btn-camara">📷 Escanear con Cámara</button></div>
                     <div id="interactiveSolicitud"></div>
-                    <button type="button" id="btnCerrarCamSolicitud" class="hidden-section" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
-                    <form id="formSolicitudPrecio" class="form-grid" style="grid-template-columns: 2fr 1fr auto;">
+                    <button type="button" id="btnCerrarCamSolicitud" class="hidden-section" style="margin-bottom: 10px; background: #ef4444; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 12px; width: 100%; font-weight: bold;">Cerrar Cámara</button>
+                    <form id="formSolicitudPrecio" class="form-grid" style="grid-template-columns: 1fr;">
                         <div class="form-group"><label>Código de Barras</label><input type="text" id="solCodigo" required placeholder="Código..."></div>
                         <div class="form-group"><label>Cantidad</label><input type="number" id="solCantidad" min="1" value="1" required></div>
-                        <div style="display: flex; align-items: flex-end;"><button type="submit" style="background: var(--primary-color); color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; height: 38px;">Generar</button></div>
+                        <button type="submit" style="background: var(--primary-color); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%;">Generar Etiqueta</button>
                     </form>
                 </div>
                 <div class="barcode-grid" id="gridSolicitudesPrecio"></div>
@@ -274,28 +281,28 @@
         <!-- SECCIÓN 3: DESTRUCCIÓN -->
         <div id="seccion-destruccion" class="hidden-section">
             <div class="destruction-card">
-                <h2>Apartado de Destrucción de Productos</h2>
+                <h2 style="font-size: 16px;">Destrucción de Productos</h2>
                 <div class="counter-badge" id="textoContadorDestruccion">Tienes 0 registros pendientes</div>
-                <div class="card" style="background: var(--bg-color); border: 1px solid var(--border-color); margin-bottom: 20px;">
-                    <div style="margin-bottom: 12px;"><button type="button" id="btnToggleCamDestruccion" class="btn-camara">📷 Escanear con Cámara</button></div>
+                <div class="card" style="background: var(--bg-color); border: 1px solid var(--border-color); margin-bottom: 16px;">
+                    <div style="margin-bottom: 10px;"><button type="button" id="btnToggleCamDestruccion" class="btn-camara">📷 Escanear con Cámara</button></div>
                     <div id="interactiveDestruccion"></div>
-                    <button type="button" id="btnCerrarCamDestruccion" class="hidden-section" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
+                    <button type="button" id="btnCerrarCamDestruccion" class="hidden-section" style="margin-bottom: 10px; background: #ef4444; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 12px; width: 100%; font-weight: bold;">Cerrar Cámara</button>
                     
-                    <form id="formDestruccion" class="form-grid" style="grid-template-columns: 2fr 2fr 1fr auto;">
+                    <form id="formDestruccion" class="form-grid" style="grid-template-columns: 1fr;">
                         <div class="form-group"><label>Código de Barras</label><input type="text" id="desCodigo" required placeholder="Código..."></div>
                         <div class="form-group"><label>Nombre / Descripción</label><input type="text" id="desNombre" required placeholder="Ej: Yogurt Entero 1L"></div>
                         <div class="form-group"><label>Cantidad</label><input type="number" id="desCantidad" min="1" value="1" required></div>
-                        <div style="display: flex; align-items: flex-end;"><button type="submit" style="background: var(--primary-color); color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; height: 38px;">Dejar Pendiente</button></div>
+                        <button type="submit" style="background: var(--primary-color); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%;">Dejar Pendiente</button>
                     </form>
                 </div>
                 
-                <h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 15px; color: var(--text-color);">Productos Pendientes por Destruir</h3>
+                <h3 style="margin-top: 20px; margin-bottom: 10px; font-size: 14px; color: var(--text-color);">Pendientes por Destruir</h3>
                 <div class="barcode-grid" id="gridDestruccion"></div>
 
-                <h3 style="margin-top: 32px; margin-bottom: 12px; font-size: 15px; color: #10b981;">📜 Historial de Destrucciones Realizadas</h3>
+                <h3 style="margin-top: 24px; margin-bottom: 10px; font-size: 14px; color: #10b981;">📜 Historial de Destrucciones</h3>
                 <div class="table-responsive">
                     <table>
-                        <thead><tr><th>Producto / Código</th><th>Cantidad</th><th>Encargado</th><th>Fecha y Hora</th></tr></thead>
+                        <thead><tr><th>Producto</th><th>Cant.</th><th>Usuario</th><th>Fecha y Hora</th></tr></thead>
                         <tbody id="lista-historial-destruccion"></tbody>
                     </table>
                 </div>
@@ -305,11 +312,11 @@
         <!-- SECCIÓN 4: GESTIÓN DE USUARIOS -->
         <div id="seccion-usuarios" class="hidden-section">
             <div class="usuarios-card">
-                <h2>Gestión de Usuarios del Sistema (Exclusivo Creador)</h2>
-                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Crea nuevas cuentas, modifica sus datos o elimina accesos.</p>
+                <h2 style="font-size: 16px;">Gestión de Usuarios</h2>
+                <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 14px;">Crea cuentas, modifica claves o elimina accesos.</p>
                 
-                <div class="card" style="background: var(--bg-color); border: 1px solid var(--border-color); margin-bottom: 20px;">
-                    <form id="formCrearUsuario" class="form-grid" style="grid-template-columns: 1fr 1fr 1fr auto;">
+                <div class="card" style="background: var(--bg-color); border: 1px solid var(--border-color); margin-bottom: 16px;">
+                    <form id="formCrearUsuario" class="form-grid" style="grid-template-columns: 1fr;">
                         <div class="form-group"><label>Nuevo Usuario</label><input type="text" id="nuevoUsuario" required placeholder="Nombre de usuario..."></div>
                         <div class="form-group"><label>Clave Laboral</label><input type="text" id="nuevaClave" required placeholder="Contraseña..."></div>
                         <div class="form-group">
@@ -319,7 +326,7 @@
                                 <option value="encargado">Encargado</option>
                             </select>
                         </div>
-                        <div style="display: flex; align-items: flex-end;"><button type="submit" style="background: #10b981; color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; height: 38px;">Crear Usuario</button></div>
+                        <button type="submit" style="background: #10b981; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%;">Crear Usuario</button>
                     </form>
                 </div>
 
@@ -512,7 +519,7 @@
                     <td><span class="badge">${u.rol.toUpperCase()}</span></td>
                     <td>
                         ${u.rol !== 'creador' ? `
-                            <button class="btn-edit" onclick="modificarUsuario(${u.id}, '${u.usuario}', '${u.clave}')">Modificar</button> | 
+                            <button class="btn-edit" onclick="modificarUsuario(${u.id}, '${u.usuario}', '${u.clave}')">Modificar</button>
                             <button class="btn-delete" onclick="eliminarUsuario(${u.id})">Eliminar</button>
                         ` : '<span style="color:var(--text-muted); font-size:11px;">Protegido</span>'}
                     </td>
@@ -575,7 +582,6 @@
             .on('postgres_changes', { event: '*', schema: 'public', table: 'perfiles_usuarios' }, () => { if(rolActual === 'creador') cargarUsuariosSistema(); })
             .subscribe();
 
-        // FORMULARIO DE PRODUCTOS CON CANTIDAD
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const codigo = document.getElementById('codigoBarraGuardar').value || document.getElementById('codigoEscaneado').value.trim() || ('CODE-' + Math.floor(100000 + Math.random() * 900000));
@@ -641,7 +647,7 @@
         async function eliminarSolicitudPrecio(id) { await supabaseClient.from('solicitudes_precio').delete().eq('id', id); cargarDatos(); }
         
         async function procesarDestruccionParcial(id, codigo, nombreProd, cantidadActual) {
-            let inputCantidad = prompt(`¿Cuántas unidades deseas destruir de este lote? (Pendientes: ${cantidadActual})`, cantidadActual);
+            let inputCantidad = prompt(`¿Cuántas unidades deseas destruir? (Pendientes: ${cantidadActual})`, cantidadActual);
             if (inputCantidad === null) return;
             
             let aDestruir = parseInt(inputCantidad);
@@ -666,10 +672,10 @@
 
             if (restante > 0) {
                 await supabaseClient.from('productos_destruccion').update({ cantidad: restante }).eq('id', id);
-                mostrarToast(`¡Se destruyeron ${aDestruir} unidades! Quedan ${restante} pendientes.`);
+                mostrarToast(`¡Se destruyeron ${aDestruir}! Quedan ${restante} pendientes.`);
             } else {
                 await supabaseClient.from('productos_destruccion').delete().eq('id', id);
-                mostrarToast(`¡Lote totalmente destruido y registrado!`);
+                mostrarToast(`¡Lote totalmente destruido!`);
             }
 
             cargarDatos();
@@ -684,7 +690,7 @@
             solicitudesPrecio.forEach(s => {
                 const div = document.createElement('div');
                 div.className = 'barcode-item';
-                div.innerHTML = `<div style="font-size: 12px; color: var(--primary-color); font-weight: 600;">Cantidad solicitada: ${s.cantidad}</div><div style="font-size: 11px; color: var(--text-muted);">Cod: ${s.codigo}</div><div class="barcode-box"><svg id="sol-barcode-${s.id}"></svg></div><button onclick="eliminarSolicitudPrecio(${s.id})" style="background: #ef4444; color: white; border: none; padding: 6px; border-radius: 6px; width: 100%; cursor:pointer;">Impreso / Eliminar</button>`;
+                div.innerHTML = `<div style="font-size: 12px; color: var(--primary-color); font-weight: 600;">Cantidad solicitada: ${s.cantidad}</div><div style="font-size: 11px; color: var(--text-muted);">Cod: ${s.codigo}</div><div class="barcode-box"><svg id="sol-barcode-${s.id}"></svg></div><button onclick="eliminarSolicitudPrecio(${s.id})" style="background: #ef4444; color: white; border: none; padding: 8px; border-radius: 8px; width: 100%; cursor:pointer; font-weight:bold;">Impreso / Eliminar</button>`;
                 grid.appendChild(div);
                 setTimeout(() => JsBarcode(`#sol-barcode-${s.id}`, s.codigo, { format: "CODE128", width: 1.5, height: 40, displayValue: true }), 50);
             });
@@ -696,7 +702,7 @@
             const grid = document.getElementById('gridDestruccion');
             grid.innerHTML = '';
             document.getElementById('contadorDestruccion').textContent = productosDestruccion.length;
-            document.getElementById('textoContadorDestruccion').textContent = `Tienes ${productosDestruccion.length} registros pendientes de destrucción`;
+            document.getElementById('textoContadorDestruccion').textContent = `Tienes ${productosDestruccion.length} registros pendientes`;
 
             productosDestruccion.forEach(d => {
                 const div = document.createElement('div');
@@ -706,7 +712,7 @@
                     <div style="font-size: 12px; color: var(--primary-color); font-weight: 600;">Cantidad pendiente: ${d.cantidad}</div>
                     <div style="font-size: 11px; color: var(--text-muted);">Cod: ${d.codigo} | Creado por: <b>${d.usuario || 'N/A'}</b></div>
                     <div class="barcode-box"><svg id="des-barcode-${d.id}"></svg></div>
-                    <button onclick="procesarDestruccionParcial(${d.id}, '${d.codigo}', '${d.nombre || ''}', ${d.cantidad})" style="background: #10b981; color: white; border: none; padding: 6px; border-radius: 6px; width: 100%; cursor:pointer;">Destruir Parcial / Total</button>
+                    <button onclick="procesarDestruccionParcial(${d.id}, '${d.codigo}', '${d.nombre || ''}', ${d.cantidad})" style="background: #10b981; color: white; border: none; padding: 8px; border-radius: 8px; width: 100%; cursor:pointer; font-weight:bold;">Destruir Parcial / Total</button>
                 `;
                 grid.appendChild(div);
                 setTimeout(() => JsBarcode(`#des-barcode-${d.id}`, d.codigo, { format: "CODE128", width: 1.5, height: 40, displayValue: true }), 50);
@@ -750,14 +756,14 @@
                 if (p.fecha_retiro < hoy && tbodyUrgentes) {
                     urgentesCount++;
                     const trU = document.createElement('tr');
-                    trU.innerHTML = `<td><div><b>${p.nombre}</b></div><small>Cod: ${p.codigo}</small></td><td><b>${cant}</b></td><td>${p.categoria}</td><td style="color:red; font-weight:bold;">${p.fecha_retiro}</td><td>${badge}</td><td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button></td>`;
+                    trU.innerHTML = `<td><div><b>${p.nombre}</b></div><small>Cod: ${p.codigo}</small></td><td><b>${cant}</b></td><td>${p.categoria}</td><td style="color:red; font-weight:bold;">${p.fecha_retiro}</td><td>${badge}</td><td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Borrar</button></td>`;
                     tbodyUrgentes.appendChild(trU);
                 }
 
                 const tbody = document.getElementById(`lista-${p.categoria}`);
                 if (tbody) {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td><div><b>${p.nombre}</b></div><small>Cod: ${p.codigo}</small></td><td><b>${cant}</b></td><td>${p.fecha_principal}</td><td style="color:var(--primary-color); font-weight:bold;">${p.fecha_retiro}</td><td>${badge}</td><td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button></td>`;
+                    tr.innerHTML = `<td><div><b>${p.nombre}</b></div><small>Cod: ${p.codigo}</small></td><td><b>${cant}</b></td><td>${p.fecha_principal}</td><td style="color:var(--primary-color); font-weight:bold;">${p.fecha_retiro}</td><td>${badge}</td><td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Borrar</button></td>`;
                     tbody.appendChild(tr);
                 }
             });
@@ -766,7 +772,6 @@
 
         document.getElementById('inputBuscador').addEventListener('input', renderizarTablas);
 
-        // CONFIGURACIÓN DE CÁMARAS CON QUAGGA
         function apagarTodasLasCamaras() {
             try { Quagga.stop(); } catch(e) {}
             ['interactive', 'interactiveSolicitud', 'interactiveDestruccion'].forEach(id => {
@@ -858,3 +863,4 @@
     </script>
 </body>
 </html>
+
