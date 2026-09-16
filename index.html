@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control en Línea - Roles y Destrucción</title>
+    <title>Control en Línea - Sistema de Roles</title>
     <!-- Librerías de Supabase, Quagga y JsBarcode -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
@@ -74,7 +75,7 @@
         .bg-green { background: #d1fae5; color: #047857; }
         .btn-delete { color: #ef4444; background: none; border: none; font-weight: 500; cursor: pointer; }
 
-        .price-request-card, .destruction-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .price-request-card, .destruction-card, .usuarios-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .barcode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 16px; }
         .barcode-item { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
         .barcode-box { background: white; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; display: flex; justify-content: center; }
@@ -86,14 +87,14 @@
 </head>
 <body>
 
-    <!-- PANTALLA DE LOGIN CON USUARIO Y CLAVE -->
+    <!-- PANTALLA DE LOGIN -->
     <div id="loginScreen">
         <h2 style="margin-bottom: 6px; text-align: center; color: #1f2937;">Control de Tienda</h2>
         <p style="text-align: center; color: #6b7280; margin-bottom: 20px; font-size: 12px;">Ingrese su usuario y clave laboral</p>
         <form id="loginForm" style="display: flex; flex-direction: column; gap: 12px;">
             <div class="form-group">
                 <label>Usuario</label>
-                <input type="text" id="loginUsuario" required placeholder="Ej: admin, colaborador1">
+                <input type="text" id="loginUsuario" required placeholder="Ej: admin, encargado1">
             </div>
             <div class="form-group">
                 <label>Clave Laboral</label>
@@ -119,6 +120,7 @@
                 <button class="tab-btn active" onclick="cambiarTab('vencimientos')">📦 Control de Retiros</button>
                 <button class="tab-btn" onclick="cambiarTab('solicitudes')">🏷️ Solicitudes de Precio (<span id="contadorSolicitudes">0</span>)</button>
                 <button class="tab-btn hidden-section" id="tabBtnDestruccion" onclick="cambiarTab('destruccion')">🗑️ Destrucción (<span id="contadorDestruccion">0</span>)</button>
+                <button class="tab-btn hidden-section" id="tabBtnUsuarios" onclick="cambiarTab('usuarios')">👥 Gestión de Usuarios</button>
             </div>
         </header>
 
@@ -231,10 +233,10 @@
             </div>
         </div>
 
-        <!-- SECCIÓN 3: DESTRUCCIÓN (EXCLUSIVO ENCARGADOS) -->
+        <!-- SECCIÓN 3: DESTRUCCIÓN (ENCARGADOS Y CREADOR) -->
         <div id="seccion-destruccion" class="hidden-section">
             <div class="destruction-card">
-                <h2>Apartado de Destrucción de Productos (Exclusivo Encargados)</h2>
+                <h2>Apartado de Destrucción de Productos</h2>
                 <div class="counter-badge" id="textoContadorDestruccion">Tienes 0 registros de destrucción pendientes</div>
                 <div class="card" style="background: #f8fafc; border: 1px solid #cbd5e1; margin-bottom: 20px;">
                     <div style="margin-bottom: 12px;"><button type="button" id="btnToggleCamDestruccion" class="btn-camara">📷 Escanear con Cámara</button></div>
@@ -247,6 +249,36 @@
                     </form>
                 </div>
                 <div class="barcode-grid" id="gridDestruccion"></div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 4: GESTIÓN DE USUARIOS (EXCLUSIVO CREADOR) -->
+        <div id="seccion-usuarios" class="hidden-section">
+            <div class="usuarios-card">
+                <h2>Gestión de Usuarios del Sistema (Exclusivo Creador)</h2>
+                <p style="color: #6b7280; font-size: 13px; margin-bottom: 16px;">Crea nuevas cuentas o elimina accesos para encargados y colaboradores.</p>
+                
+                <div class="card" style="background: #f8fafc; border: 1px solid #cbd5e1; margin-bottom: 20px;">
+                    <form id="formCrearUsuario" class="form-grid" style="grid-template-columns: 1fr 1fr 1fr auto;">
+                        <div class="form-group"><label>Nuevo Usuario</label><input type="text" id="nuevoUsuario" required placeholder="Nombre de usuario..."></div>
+                        <div class="form-group"><label>Clave Laboral</label><input type="text" id="nuevaClave" required placeholder="Contraseña..."></div>
+                        <div class="form-group">
+                            <label>Rol</label>
+                            <select id="nuevoRol" required>
+                                <option value="colaborador">Colaborador</option>
+                                <option value="encargado">Encargado</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: flex-end;"><button type="submit" style="background: #10b981; color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; height: 38px;">Crear Usuario</button></div>
+                    </form>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Usuario</th><th>Rol</th><th>Acción</th></tr></thead>
+                        <tbody id="lista-usuarios-sistema"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -262,6 +294,7 @@
         let productos = [];
         let solicitudesPrecio = [];
         let productosDestruccion = [];
+        let listaUsuarios = [];
 
         const loginScreen = document.getElementById('loginScreen');
         const appContainer = document.getElementById('appContainer');
@@ -275,7 +308,6 @@
             setTimeout(() => { toastExito.style.display = 'none'; }, 3000);
         }
 
-        // LOGIN CON USUARIO Y CLAVE LABORAL
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const usuarioInput = document.getElementById('loginUsuario').value.trim().toLowerCase();
@@ -302,8 +334,12 @@
             document.getElementById('spanUserBadge').textContent = usuarioActual;
             document.getElementById('spanRol').textContent = rolActual.toUpperCase();
 
-            if (rolActual === 'encargado') {
+            // Mostrar pestañas según permisos
+            if (rolActual === 'encargado' || rolActual === 'creador') {
                 document.getElementById('tabBtnDestruccion').classList.remove('hidden-section');
+            }
+            if (rolActual === 'creador') {
+                document.getElementById('tabBtnUsuarios').classList.remove('hidden-section');
             }
 
             cargarDatos();
@@ -323,6 +359,7 @@
             document.getElementById('seccion-vencimientos').classList.add('hidden-section');
             document.getElementById('seccion-solicitudes').classList.add('hidden-section');
             document.getElementById('seccion-destruccion').classList.add('hidden-section');
+            document.getElementById('seccion-usuarios').classList.add('hidden-section');
 
             if (tab === 'vencimientos') {
                 document.getElementById('seccion-vencimientos').classList.remove('hidden-section');
@@ -331,10 +368,14 @@
                 document.getElementById('seccion-solicitudes').classList.remove('hidden-section');
                 document.querySelector('.tabs button:nth-child(2)').classList.add('active');
                 renderizarSolicitudesPrecio();
-            } else if (tab === 'destruccion' && rolActual === 'encargado') {
+            } else if (tab === 'destruccion' && (rolActual === 'encargado' || rolActual === 'creador')) {
                 document.getElementById('seccion-destruccion').classList.remove('hidden-section');
                 document.getElementById('tabBtnDestruccion').classList.add('active');
                 renderizarDestruccion();
+            } else if (tab === 'usuarios' && rolActual === 'creador') {
+                document.getElementById('seccion-usuarios').classList.remove('hidden-section');
+                document.getElementById('tabBtnUsuarios').classList.add('active');
+                cargarUsuariosSistema();
             }
         }
 
@@ -345,14 +386,65 @@
             const { data: solData } = await supabaseClient.from('solicitudes_precio').select('*').order('id', { ascending: false });
             if (solData) solicitudesPrecio = solData;
 
-            if (rolActual === 'encargado') {
+            if (rolActual === 'encargado' || rolActual === 'creador') {
                 const { data: desData } = await supabaseClient.from('productos_destruccion').select('*').order('id', { ascending: false });
                 if (desData) productosDestruccion = desData;
             }
 
+            if (rolActual === 'creador') {
+                cargarUsuariosSistema();
+            }
+
             renderizarTablas();
             renderizarSolicitudesPrecio();
-            if (rolActual === 'encargado') renderizarDestruccion();
+            if (rolActual === 'encargado' || rolActual === 'creador') renderizarDestruccion();
+        }
+
+        async function cargarUsuariosSistema() {
+            if (rolActual !== 'creador') return;
+            const { data } = await supabaseClient.from('perfiles_usuarios').select('*').order('id', { ascending: true });
+            if (data) {
+                listaUsuarios = data;
+                renderizarTablaUsuarios();
+            }
+        }
+
+        function renderizarTablaUsuarios() {
+            const tbody = document.getElementById('lista-usuarios-sistema');
+            tbody.innerHTML = '';
+            listaUsuarios.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${u.usuario}</b></td>
+                    <td><span class="badge">${u.rol.toUpperCase()}</span></td>
+                    <td>${u.rol !== 'creador' ? `<button class="btn-delete" onclick="eliminarUsuario(${u.id})">Eliminar</button>` : '<span style="color:#6b7280; font-size:11px;">Protegido</span>'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById('formCrearUsuario').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const usuario = document.getElementById('nuevoUsuario').value.trim().toLowerCase();
+            const clave = document.getElementById('nuevaClave').value.trim();
+            const rol = document.getElementById('nuevoRol').value;
+
+            const { error } = await supabaseClient.from('perfiles_usuarios').insert([{ usuario, clave, rol }]);
+            if (error) {
+                alert("Error al crear usuario (puede que ya exista): " + error.message);
+                return;
+            }
+
+            e.target.reset();
+            mostrarToast('¡Usuario creado con éxito!');
+            cargarUsuariosSistema();
+        });
+
+        async function eliminarUsuario(id) {
+            if (!confirm('¿Seguro que deseas eliminar este usuario?')) return;
+            await supabaseClient.from('perfiles_usuarios').delete().eq('id', id);
+            mostrarToast('¡Usuario eliminado!');
+            cargarUsuariosSistema();
         }
 
         // TIEMPO REAL
@@ -361,9 +453,10 @@
             .on('postgres_changes', { event: '*', schema: 'public', table: 'productos_sistema' }, () => cargarDatos())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitudes_precio' }, () => cargarDatos())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'productos_destruccion' }, () => cargarDatos())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'perfiles_usuarios' }, () => { if(rolActual === 'creador') cargarUsuariosSistema(); })
             .subscribe();
 
-        // FORMULARIOS Y ACCIONES
+        // FORMULARIOS DE PRODUCTOS Y PRECIOS
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const codigo = document.getElementById('codigoBarraGuardar').value || document.getElementById('codigoEscaneado').value.trim() || ('CODE-' + Math.floor(100000 + Math.random() * 900000));
@@ -424,7 +517,7 @@
         }
 
         function renderizarDestruccion() {
-            if (rolActual !== 'encargado') return;
+            if (rolActual !== 'encargado' && rolActual !== 'creador') return;
             const grid = document.getElementById('gridDestruccion');
             grid.innerHTML = '';
             document.getElementById('contadorDestruccion').textContent = productosDestruccion.length;
@@ -475,4 +568,3 @@
     </script>
 </body>
 </html>
-
