@@ -32,6 +32,9 @@
         .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; }
         .card h2 { font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
         
+        .tools-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
+        @media(min-width: 768px) { .tools-grid { grid-template-columns: 1fr 1fr; } }
+        
         .scan-box { background: #eff6ff; border: 2px dashed #3b82f6; padding: 14px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
         .search-box-standalone { background: #f0fdf4; border: 2px dashed #10b981; padding: 16px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 8px; }
         
@@ -56,6 +59,7 @@
         @media(min-width: 1024px) { .grid-sections { grid-template-columns: repeat(2, 1fr); } }
         
         .section-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid #ccc; margin-bottom: 20px; }
+        .border-urgente { border-top-color: #ef4444; background: #fff5f5; }
         .border-frio { border-top-color: #0ea5e9; }
         .border-legsin { border-top-color: #f59e0b; }
         .border-legcon { border-top-color: #10b981; }
@@ -164,7 +168,27 @@
                 <input type="text" id="inputBuscador" placeholder="Escribe el nombre o código para filtrar todas las secciones..." style="font-size: 14px; padding: 10px 12px;">
             </div>
 
-            <!-- Secciones -->
+            <!-- SECCIÓN ESPECIAL: PRODUCTOS QUE DEBIERON SALIR (VENCIDOS / URGENTES) -->
+            <div class="section-card border-urgente" style="margin-bottom: 24px;">
+                <h3 style="color: #b91c1c;">🚨 Productos Vencidos (Debieron Salir)</h3>
+                <p style="color: #7f1d1d;">Lista general de todos los productos que ya pasaron su fecha de retiro y deben retirarse urgentemente.</p>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Código / Producto</th>
+                                <th>Área / Sección</th>
+                                <th>F. Retiro</th>
+                                <th>Estado</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-urgentes"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Secciones normales -->
             <div class="grid-sections">
                 <div class="section-card border-frio">
                     <h3>❄️ Nevera / Productos de Frío</h3>
@@ -499,8 +523,9 @@
         }
 
         function renderizarTablas() {
-            ['frio', 'legumbre_sin_cad', 'legumbre_con_cad', 'pasillo1', 'pasillo2', 'pasillo3', 'pasillo5'].forEach(cat => {
-                document.getElementById(`lista-${cat}`).innerHTML = '';
+            ['frio', 'legumbre_sin_cad', 'legumbre_con_cad', 'pasillo1', 'pasillo2', 'pasillo3', 'pasillo5', 'urgentes'].forEach(cat => {
+                const el = document.getElementById(`lista-${cat}`);
+                if (el) el.innerHTML = '';
             });
 
             const hoy = new Date().toISOString().split('T')[0];
@@ -509,18 +534,48 @@
                 p.nombre.toLowerCase().includes(filtroTexto) || p.codigo.toLowerCase().includes(filtroTexto)
             );
 
-            productosFiltrados.forEach(p => {
-                const tbody = document.getElementById(`lista-${p.categoria}`);
-                if (!tbody) return;
+            const nombresCategorias = {
+                'frio': '❄️ Nevera / Frío',
+                'legumbre_sin_cad': '🌱 Legumbres (Sin cad)',
+                'legumbre_con_cad': '📦 Legumbres Empacadas',
+                'pasillo1': '🛒 Pasillo 1: Limpieza',
+                'pasillo2': '🍿 Pasillo 2: Snack',
+                'pasillo3': '🌾 Pasillo 3: Granos',
+                'pasillo5': '🔩 Pasillo 5: Ferri'
+            };
 
+            const tbodyUrgentes = document.getElementById('lista-urgentes');
+            let contadorUrgentes = 0;
+
+            productosFiltrados.forEach(p => {
                 let estadoBadge = '';
                 if (p.fecha_retiro < hoy) {
                     estadoBadge = `<span class="badge-status bg-red">¡URGENTE!</span>`;
+                    
+                    // Agregar a la sección superior de Vencidos/Urgentes
+                    if (tbodyUrgentes) {
+                        contadorUrgentes++;
+                        const trUrgente = document.createElement('tr');
+                        trUrgente.innerHTML = `
+                            <td>
+                                <div style="font-weight: 500;">${p.nombre}</div>
+                                <div style="font-size: 10px; color: #6b7280;">Cod: ${p.codigo}</div>
+                            </td>
+                            <td>${nombresCategorias[p.categoria] || p.categoria}</td>
+                            <td style="font-weight: bold; color: #b91c1c;">${p.fecha_retiro}</td>
+                            <td>${estadoBadge}</td>
+                            <td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button></td>
+                        `;
+                        tbodyUrgentes.appendChild(trUrgente);
+                    }
                 } else if (p.fecha_retiro === hoy) {
                     estadoBadge = `<span class="badge-status bg-amber">Retirar Hoy</span>`;
                 } else {
                     estadoBadge = `<span class="badge-status bg-green">Vigente</span>`;
                 }
+
+                const tbody = document.getElementById(`lista-${p.categoria}`);
+                if (!tbody) return;
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -535,6 +590,10 @@
                 `;
                 tbody.appendChild(tr);
             });
+
+            if (tbodyUrgentes && contadorUrgentes === 0) {
+                tbodyUrgentes.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #6b7280; padding: 12px;">No hay productos vencidos o pendientes de retiro. ¡Todo al día!</td></tr>`;
+            }
         }
 
         let camaraActiva = false;
