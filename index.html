@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control en Línea - Pasillos y Precios</title>
+    <title>Control en Línea - Roles y Destrucción</title>
     <!-- Librerías de Supabase, Quagga y JsBarcode -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
@@ -13,10 +13,8 @@
         body { background-color: #f3f4f6; color: #1f2937; padding: 16px; }
         .container { max-width: 1200px; margin: 0 auto; }
         
-        #alertaHorario { display: none; background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-
-        #toastExito { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; z-index: 1000; transition: opacity 0.3s ease; }
+        #alertaHorario { display: none; background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        #toastExito { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; z-index: 1000; }
 
         header { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px; }
         @media(min-width: 768px) { header { flex-direction: row; justify-content: space-between; align-items: center; } }
@@ -25,7 +23,7 @@
         
         .badge { background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 500; display: inline-block; }
         
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .tab-btn { background: #e5e7eb; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: #4b5563; }
         .tab-btn.active { background: #2563eb; color: white; }
 
@@ -42,10 +40,9 @@
         input:focus, select:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.2); }
         
         .btn-camara { background: #0284c7; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: fit-content; }
-        .btn-camara:hover { background: #0369a1; }
-
-        #interactive.viewport, #interactiveSolicitud.viewport { position: relative; width: 100%; height: 220px; border: 2px solid #3b82f6; border-radius: 8px; overflow: hidden; margin-bottom: 12px; background: #000; display: none; }
-        #interactive.viewport canvas, #interactive.viewport video, #interactiveSolicitud.viewport canvas, #interactiveSolicitud.viewport video { width: 100%; height: 100%; object-fit: cover; }
+        
+        #interactive.viewport, #interactiveSolicitud.viewport, #interactiveDestruccion.viewport { position: relative; width: 100%; height: 220px; border: 2px solid #3b82f6; border-radius: 8px; overflow: hidden; margin-bottom: 12px; background: #000; display: none; }
+        #interactive.viewport canvas, #interactive.viewport video, #interactiveSolicitud.viewport canvas, #interactiveSolicitud.viewport video, #interactiveDestruccion.viewport canvas, #interactiveDestruccion.viewport video { width: 100%; height: 100%; object-fit: cover; }
 
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
         @media(min-width: 768px) { .form-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -53,8 +50,7 @@
         label { font-size: 12px; font-weight: 500; color: #4b5563; }
         
         .btn-submit { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; grid-column: 1 / -1; justify-self: end; }
-        .btn-submit:hover { background: #059669; }
-
+        
         .grid-sections { display: grid; grid-template-columns: 1fr; gap: 20px; }
         @media(min-width: 1024px) { .grid-sections { grid-template-columns: repeat(2, 1fr); } }
         
@@ -68,8 +64,6 @@
         .border-pasillo3 { border-top-color: #84cc16; }
         .border-pasillo5 { border-top-color: #8b5cf6; }
 
-        .section-card h3 { font-size: 15px; font-weight: bold; color: #1f2937; margin-bottom: 2px; }
-        .section-card p { margin-bottom: 12px; }
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
         th, td { padding: 8px; border-bottom: 1px solid #e5e7eb; }
@@ -79,68 +73,77 @@
         .bg-amber { background: #fef3c7; color: #b45309; }
         .bg-green { background: #d1fae5; color: #047857; }
         .btn-delete { color: #ef4444; background: none; border: none; font-weight: 500; cursor: pointer; }
-        .btn-delete:hover { color: #b91c1c; text-decoration: underline; }
 
-        .price-request-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .price-request-card, .destruction-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .barcode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 16px; }
-        .barcode-item { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .barcode-item { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
         .barcode-box { background: white; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; display: flex; justify-content: center; }
         .counter-badge { background: #dbeafe; color: #1e40af; padding: 6px 16px; border-radius: 99px; font-weight: bold; font-size: 13px; display: inline-block; margin-bottom: 12px; }
         .hidden-section { display: none; }
+        
+        /* Login Screen */
+        #loginScreen { max-width: 400px; margin: 80px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- Notificación Toast de Éxito -->
-        <div id="toastExito">¡Añadido y guardado exitosamente en la nube!</div>
+    <!-- PANTALLA DE LOGIN -->
+    <div id="loginScreen">
+        <h2 style="margin-bottom: 20px; text-align: center; color: #1f2937;">Iniciar Sesión</h2>
+        <form id="loginForm" style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="form-group">
+                <label>Correo Electrónico</label>
+                <input type="email" id="loginEmail" required placeholder="correo@ejemplo.com">
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="loginPassword" required placeholder="********">
+            </div>
+            <button type="submit" class="btn-submit" style="width: 100%; justify-self: center; margin-top: 10px;">Ingresar al Sistema</button>
+        </form>
+        <div id="loginError" style="color: #ef4444; font-size: 12px; margin-top: 10px; text-align: center;"></div>
+    </div>
 
-        <!-- Notificación Flotante por Horario -->
-        <div id="alertaHorario">
-            🚨 ¡HORARIO DE RETIRO ACTIVO (6:30 PM - 9:00 PM)! Tienes productos que deben retirarse.
-        </div>
+    <!-- APLICACIÓN PRINCIPAL (OCULTA HASTA LOGIN) -->
+    <div id="appContainer" class="container hidden-section">
+        <div id="toastExito">¡Operación realizada con éxito!</div>
+        <div id="alertaHorario">🚨 ¡HORARIO DE RETIRO ACTIVO (6:30 PM - 9:00 PM)! Tienes productos que deben retirarse.</div>
 
-        <!-- Encabezado -->
         <header>
             <div>
-                <h1>Control en Línea (Tiempo Real)</h1>
-                <p>Sincronizado en la nube con Supabase.</p>
+                <h1 id="tituloBienvenida">Control en Línea</h1>
+                <p>Rol actual: <span id="spanRol" class="badge" style="font-weight: bold;">...</span></p>
             </div>
-            <div class="badge">
-                ☁️ Estado: Conectado a la Nube
-            </div>
-            <div class="tabs" style="margin-top: 10px;">
+            <button onclick="cerrarSesion()" style="background: #ef4444; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold;">Cerrar Sesión</button>
+            <div class="tabs" style="margin-top: 10px; width: 100%;">
                 <button class="tab-btn active" onclick="cambiarTab('vencimientos')">📦 Control de Retiros</button>
                 <button class="tab-btn" onclick="cambiarTab('solicitudes')">🏷️ Solicitudes de Precio (<span id="contadorSolicitudes">0</span>)</button>
+                <button class="tab-btn hidden-section" id="tabBtnDestruccion" onclick="cambiarTab('destruccion')">🗑️ Destrucción (<span id="contadorDestruccion">0</span>)</button>
             </div>
         </header>
 
         <!-- SECCIÓN 1: VENCIMIENTOS -->
         <div id="seccion-vencimientos">
-            <!-- Formulario de Registro -->
             <div class="card">
                 <h2>
                     <span>Registrar Producto</span>
                     <span id="modoForm" style="font-size: 12px; color: #0284c7; font-weight: normal;">Modo: Ingreso manual o pistola</span>
                 </h2>
-
                 <div class="tools-grid" style="grid-template-columns: 1fr;">
                     <div class="scan-box">
                         <label style="font-weight: 600; color: #1e40af;">Escanear / Ingresar Código de Barras</label>
-                        <input type="text" id="codigoEscaneado" placeholder="Pasa la pistola o escribe aquí..." autofocus>
+                        <input type="text" id="codigoEscaneado" placeholder="Pasa la pistola o escribe aquí...">
                         <button type="button" id="btnToggleCam" class="btn-camara">📷 Usar Cámara Celular</button>
                     </div>
                 </div>
-
                 <div id="interactive" class="viewport"></div>
-                <button type="button" id="btnCerrarCam" class="hidden" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
+                <button type="button" id="btnCerrarCam" class="hidden-section" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
 
-                <!-- Formulario Único -->
                 <form id="productForm" class="form-grid">
                     <input type="hidden" id="codigoBarraGuardar">
                     <div class="form-group">
                         <label>Nombre del Producto</label>
-                        <input type="text" id="nombre" required placeholder="Ej: Yogurt, Espinaca, Detergente...">
+                        <input type="text" id="nombre" required placeholder="Ej: Yogurt, Espinaca...">
                     </div>
                     <div class="form-group">
                         <label>Categoría / Área / Pasillo</label>
@@ -158,100 +161,53 @@
                         <label id="labelFecha">Fecha de Caducidad / Vencimiento</label>
                         <input type="date" id="fechaPrincipal" required>
                     </div>
-                    <button type="submit" class="btn-submit" id="btnSubmitText">Guardar en la Nube</button>
+                    <button type="submit" class="btn-submit">Guardar en la Nube</button>
                 </form>
             </div>
 
-            <!-- BUSCADOR INDEPENDIENTE ARRIBA DE LAS SECCIONES -->
             <div class="search-box-standalone">
                 <label style="font-weight: 600; color: #047857; font-size: 14px;">🔍 Buscar Producto en el Sistema</label>
-                <input type="text" id="inputBuscador" placeholder="Escribe el nombre o código para filtrar todas las secciones..." style="font-size: 14px; padding: 10px 12px;">
+                <input type="text" id="inputBuscador" placeholder="Escribe el nombre o código para filtrar..." style="font-size: 14px; padding: 10px 12px;">
             </div>
 
-            <!-- SECCIÓN ESPECIAL: PRODUCTOS QUE DEBIERON SALIR (VENCIDOS / URGENTES) -->
             <div class="section-card border-urgente" style="margin-bottom: 24px;">
                 <h3 style="color: #b91c1c;">🚨 Productos Vencidos (Debieron Salir)</h3>
-                <p style="color: #7f1d1d;">Lista general de todos los productos que ya pasaron su fecha de retiro y deben retirarse urgentemente.</p>
                 <div class="table-responsive">
                     <table>
-                        <thead>
-                            <tr>
-                                <th>Código / Producto</th>
-                                <th>Área / Sección</th>
-                                <th>F. Retiro</th>
-                                <th>Estado</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>Código / Producto</th><th>Área</th><th>F. Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
                         <tbody id="lista-urgentes"></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Secciones normales -->
             <div class="grid-sections">
                 <div class="section-card border-frio">
                     <h3>❄️ Nevera / Productos de Frío</h3>
-                    <div class="table-responsive">
-                        <table>
-                            <thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
-                            <tbody id="lista-frio"></tbody>
-                        </table>
-                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-frio"></tbody></table></div>
                 </div>
                 <div class="section-card border-legsin">
                     <h3>🌱 Legumbres (Sin caducidad)</h3>
-                    <div class="table-responsive">
-                        <table>
-                            <thead><tr><th>Código / Producto</th><th>Elaboración</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
-                            <tbody id="lista-legumbre_sin_cad"></tbody>
-                        </table>
-                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Elaboración</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-legumbre_sin_cad"></tbody></table></div>
                 </div>
                 <div class="section-card border-legcon">
                     <h3>📦 Legumbres Empacadas</h3>
-                    <div class="table-responsive">
-                        <table>
-                            <thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
-                            <tbody id="lista-legumbre_con_cad"></tbody>
-                        </table>
-                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-legumbre_con_cad"></tbody></table></div>
                 </div>
                 <div class="section-card border-pasillo1">
                     <h3>🛒 Pasillo 1: Limpieza</h3>
-                    <div class="table-responsive">
-                        <table>
-                            <thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
-                            <tbody id="lista-pasillo1"></tbody>
-                        </table>
-                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo1"></tbody></table></div>
                 </div>
                 <div class="section-card border-pasillo2">
                     <h3>🍿 Pasillo 2: Snack</h3>
-                    <div class="table-responsive">
-                        <table>
-                            <thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
-                            <tbody id="lista-pasillo2"></tbody>
-                        </table>
-                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo2"></tbody></table></div>
                 </div>
                 <div class="section-card border-pasillo3">
                     <h3>🌾 Pasillo 3: Granos</h3>
-                    <div class="table-responsive">
-                        <table>
-                            <thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
-                            <tbody id="lista-pasillo3"></tbody>
-                        </table>
-                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo3"></tbody></table></div>
                 </div>
                 <div class="section-card border-pasillo5">
                     <h3>🔩 Pasillo 5: Ferri</h3>
-                    <div class="table-responsive">
-                        <table>
-                            <thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
-                            <tbody id="lista-pasillo5"></tbody>
-                        </table>
-                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>Código / Producto</th><th>Caducidad</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo5"></tbody></table></div>
                 </div>
             </div>
         </div>
@@ -259,33 +215,38 @@
         <!-- SECCIÓN 2: SOLICITUDES DE PRECIO -->
         <div id="seccion-solicitudes" class="hidden-section">
             <div class="price-request-card">
-                <h2>Apartado de Solicitudes de Precio (En Línea)</h2>
+                <h2>Apartado de Solicitudes de Precio</h2>
                 <div class="counter-badge" id="textoContadorPrecios">Tienes 0 solicitudes pendientes</div>
-                <p style="color: #64748b; font-size: 13px; margin-bottom: 16px;">Sincronizado en tiempo real con el personal de impresión.</p>
-                
                 <div class="card" style="background: #f8fafc; border: 1px solid #cbd5e1; margin-bottom: 20px;">
-                    <div style="margin-bottom: 12px;">
-                        <button type="button" id="btnToggleCamSolicitud" class="btn-camara">📷 Escanear con Cámara del Teléfono</button>
-                    </div>
+                    <div style="margin-bottom: 12px;"><button type="button" id="btnToggleCamSolicitud" class="btn-camara">📷 Escanear con Cámara</button></div>
                     <div id="interactiveSolicitud" class="viewport"></div>
-                    <button type="button" id="btnCerrarCamSolicitud" class="hidden" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
-
+                    <button type="button" id="btnCerrarCamSolicitud" class="hidden-section" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
                     <form id="formSolicitudPrecio" class="form-grid" style="grid-template-columns: 2fr 1fr auto;">
-                        <div class="form-group">
-                            <label>Código de Barras</label>
-                            <input type="text" id="solCodigo" required placeholder="Escanea o escribe código...">
-                        </div>
-                        <div class="form-group">
-                            <label>Cantidad</label>
-                            <input type="number" id="solCantidad" min="1" value="1" required>
-                        </div>
-                        <div style="display: flex; align-items: flex-end;">
-                            <button type="submit" style="background: #2563eb; color: white; border: none; padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; height: 38px;">Enviar a la Nube</button>
-                        </div>
+                        <div class="form-group"><label>Código de Barras</label><input type="text" id="solCodigo" required placeholder="Código..."></div>
+                        <div class="form-group"><label>Cantidad</label><input type="number" id="solCantidad" min="1" value="1" required></div>
+                        <div style="display: flex; align-items: flex-end;"><button type="submit" style="background: #2563eb; color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; height: 38px;">Generar</button></div>
                     </form>
                 </div>
-
                 <div class="barcode-grid" id="gridSolicitudesPrecio"></div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: DESTRUCCIÓN (EXCLUSIVO ENCARGADOS) -->
+        <div id="seccion-destruccion" class="hidden-section">
+            <div class="destruction-card">
+                <h2>Apartado de Destrucción de Productos (Exclusivo Encargados)</h2>
+                <div class="counter-badge" id="textoContadorDestruccion">Tienes 0 registros de destrucción pendientes</div>
+                <div class="card" style="background: #f8fafc; border: 1px solid #cbd5e1; margin-bottom: 20px;">
+                    <div style="margin-bottom: 12px;"><button type="button" id="btnToggleCamDestruccion" class="btn-camara">📷 Escanear con Cámara</button></div>
+                    <div id="interactiveDestruccion" class="viewport"></div>
+                    <button type="button" id="btnCerrarCamDestruccion" class="hidden-section" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
+                    <form id="formDestruccion" class="form-grid" style="grid-template-columns: 2fr 1fr auto;">
+                        <div class="form-group"><label>Código de Barras</label><input type="text" id="desCodigo" required placeholder="Código..."></div>
+                        <div class="form-group"><label>Cantidad a Destruir</label><input type="number" id="desCantidad" min="1" value="1" required></div>
+                        <div style="display: flex; align-items: flex-end;"><button type="submit" style="background: #dc2626; color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; height: 38px;">Registrar Destrucción</button></div>
+                    </form>
+                </div>
+                <div class="barcode-grid" id="gridDestruccion"></div>
             </div>
         </div>
     </div>
@@ -296,62 +257,87 @@
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        let currentUser = null;
+        let currentRole = null;
         let productos = [];
         let solicitudesPrecio = [];
+        let productosDestruccion = [];
 
-        const inputCodigo = document.getElementById('codigoEscaneado');
-        const codigoBarraGuardar = document.getElementById('codigoBarraGuardar');
-        const inputBuscador = document.getElementById('inputBuscador');
-        const inputNombre = document.getElementById('nombre');
-        const categoriaSelect = document.getElementById('categoria');
-        const labelFecha = document.getElementById('labelFecha');
-        const fechaPrincipalInput = document.getElementById('fechaPrincipal');
-        const modoForm = document.getElementById('modoForm');
-        const btnSubmitText = document.getElementById('btnSubmitText');
-        const alertaHorario = document.getElementById('alertaHorario');
+        const loginScreen = document.getElementById('loginScreen');
+        const appContainer = document.getElementById('appContainer');
+        const loginForm = document.getElementById('loginForm');
+        const loginError = document.getElementById('loginError');
         const toastExito = document.getElementById('toastExito');
-        
-        const solCodigo = document.getElementById('solCodigo');
-        const solCantidad = document.getElementById('solCantidad');
-        const contadorSolicitudes = document.getElementById('contadorSolicitudes');
-        const textoContadorPrecios = document.getElementById('textoContadorPrecios');
-        const gridSolicitudesPrecio = document.getElementById('gridSolicitudesPrecio');
 
         function mostrarToast(mensaje) {
             toastExito.textContent = mensaje;
             toastExito.style.display = 'block';
-            setTimeout(() => {
-                toastExito.style.display = 'none';
-            }, 3000);
+            setTimeout(() => { toastExito.style.display = 'none'; }, 3000);
+        }
+
+        // LOGIN Y VERIFICACIÓN DE ROL
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            loginError.textContent = '';
+
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) {
+                loginError.textContent = "Error al iniciar sesión: " + error.message;
+                return;
+            }
+
+            currentUser = data.user;
+            await verificarRolYEntrar();
+        });
+
+        async function verificarRolYEntrar() {
+            if (!currentUser) return;
+            const { data, error } = await supabaseClient.from('perfiles_usuarios').select('rol').eq('email', currentUser.email).single();
+            
+            if (error || !data) {
+                // Si no tiene perfil creado, por defecto se asigna como colaborador
+                currentRole = 'colaborador';
+            } else {
+                currentRole = data.rol;
+            }
+
+            loginScreen.classList.add('hidden-section');
+            appContainer.classList.remove('hidden-section');
+            document.getElementById('spanRol').textContent = currentRole.toUpperCase();
+
+            if (currentRole === 'encargado') {
+                document.getElementById('tabBtnDestruccion').classList.remove('hidden-section');
+            }
+
+            cargarDatos();
+        }
+
+        async function cerrarSesion() {
+            await supabaseClient.auth.signOut();
+            location.reload();
         }
 
         function cambiarTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('seccion-vencimientos').classList.add('hidden-section');
+            document.getElementById('seccion-solicitudes').classList.add('hidden-section');
+            document.getElementById('seccion-destruccion').classList.add('hidden-section');
+
             if (tab === 'vencimientos') {
                 document.getElementById('seccion-vencimientos').classList.remove('hidden-section');
-                document.getElementById('seccion-solicitudes').classList.add('hidden-section');
                 document.querySelector('.tabs button:nth-child(1)').classList.add('active');
-            } else {
-                document.getElementById('seccion-vencimientos').classList.add('hidden-section');
+            } else if (tab === 'solicitudes') {
                 document.getElementById('seccion-solicitudes').classList.remove('hidden-section');
                 document.querySelector('.tabs button:nth-child(2)').classList.add('active');
                 renderizarSolicitudesPrecio();
+            } else if (tab === 'destruccion' && currentRole === 'encargado') {
+                document.getElementById('seccion-destruccion').classList.remove('hidden-section');
+                document.getElementById('tabBtnDestruccion').classList.add('active');
+                renderizarDestruccion();
             }
         }
-
-        function verificarHorarioNotificacion() {
-            const ahora = new Date();
-            const horas = ahora.getHours();
-            const minutos = ahora.getMinutes();
-            const tiempoMinutos = horas * 60 + minutos;
-            if (tiempoMinutos >= 1110 && tiempoMinutos <= 1260) {
-                alertaHorario.style.display = 'block';
-            } else {
-                alertaHorario.style.display = 'none';
-            }
-        }
-        setInterval(verificarHorarioNotificacion, 30000);
-        verificarHorarioNotificacion();
 
         async function cargarDatos() {
             const { data: prodData } = await supabaseClient.from('productos_sistema').select('*').order('id', { ascending: false });
@@ -360,58 +346,31 @@
             const { data: solData } = await supabaseClient.from('solicitudes_precio').select('*').order('id', { ascending: false });
             if (solData) solicitudesPrecio = solData;
 
+            if (currentRole === 'encargado') {
+                const { data: desData } = await supabaseClient.from('productos_destruccion').select('*').order('id', { ascending: false });
+                if (desData) productosDestruccion = desData;
+            }
+
             renderizarTablas();
             renderizarSolicitudesPrecio();
+            if (currentRole === 'encargado') renderizarDestruccion();
         }
 
+        // TIEMPO REAL
         supabaseClient
-            .channel('cambios-en-tiempo-real')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'productos_sistema' }, payload => {
-                cargarDatos();
-            })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitudes_precio' }, payload => {
-                cargarDatos();
-            })
+            .channel('cambios-globales')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'productos_sistema' }, () => cargarDatos())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitudes_precio' }, () => cargarDatos())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'productos_destruccion' }, () => cargarDatos())
             .subscribe();
 
-        categoriaSelect.addEventListener('change', () => {
-            if (categoriaSelect.value === 'legumbre_sin_cad') {
-                labelFecha.textContent = "Fecha de Elaboración";
-            } else {
-                labelFecha.textContent = "Fecha de Caducidad / Vencimiento";
-            }
-        });
-
-        inputCodigo.addEventListener('input', (e) => {
-            const codigo = e.target.value.trim();
-            if (codigo.length >= 2) procesarCodigoLeido(codigo);
-        });
-
-        function procesarCodigoLeido(codigo) {
-            if (!codigo) return;
-            codigoBarraGuardar.value = codigo;
-            const existente = productos.find(p => p.codigo === codigo);
-            if (existente) {
-                inputNombre.value = existente.nombre;
-                categoriaSelect.value = existente.categoria;
-                modoForm.textContent = `⚡ Autocompletado: ${existente.nombre} (Cod: ${codigo})`;
-                modoForm.style.color = '#10b981';
-            } else {
-                modoForm.textContent = `Registrando nuevo código: ${codigo}`;
-                modoForm.style.color = '#0284c7';
-                inputNombre.value = '';
-            }
-        }
-
-        inputBuscador.addEventListener('input', renderizarTablas);
-
-        // Guardar Vencimiento en Supabase
+        // FORMULARIOS Y ACCIONES
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const codigo = codigoBarraGuardar.value || inputCodigo.value.trim() || ('CODE-' + Math.floor(100000 + Math.random() * 900000));
-            const nombre = inputNombre.value.trim();
-            const categoria = categoriaSelect.value;
-            const fechaStr = fechaPrincipalInput.value;
+            const codigo = document.getElementById('codigoBarraGuardar').value || document.getElementById('codigoEscaneado').value.trim() || ('CODE-' + Math.floor(100000 + Math.random() * 900000));
+            const nombre = document.getElementById('nombre').value.trim();
+            const categoria = document.getElementById('categoria').value;
+            const fechaStr = document.getElementById('fechaPrincipal').value;
 
             let fechaRetiro = new Date(fechaStr + 'T00:00:00');
             if (categoria === 'legumbre_sin_cad') fechaRetiro.setDate(fechaRetiro.getDate() + 8);
@@ -419,106 +378,65 @@
             else if (categoria === 'frio') fechaRetiro.setDate(fechaRetiro.getDate() - 5);
             else fechaRetiro.setDate(fechaRetiro.getDate() - 3);
 
-            const objetoSupabase = {
-                codigo,
-                nombre,
-                categoria,
-                fecha_principal: fechaStr,
-                fecha_retiro: fechaRetiro.toISOString().split('T')[0]
-            };
-
-            const { error } = await supabaseClient.from('productos_sistema').insert([objetoSupabase]);
-            
-            if (error) {
-                alert("Error al guardar en la nube: " + error.message);
-                return;
-            }
-
+            await supabaseClient.from('productos_sistema').insert([{ codigo, nombre, categoria, fecha_principal: fechaStr, fecha_retiro: fechaRetiro.toISOString().split('T')[0] }]);
             e.target.reset();
-            inputCodigo.value = '';
-            codigoBarraGuardar.value = '';
-            modoForm.textContent = "Modo: Ingreso manual o pistola";
-            modoForm.style.color = '#0284c7';
-            inputCodigo.focus();
-            mostrarToast('¡Guardado exitosamente en la nube!');
+            document.getElementById('codigoEscaneado').value = '';
+            mostrarToast('¡Guardado exitosamente!');
             cargarDatos();
         });
 
-        // Guardar Solicitud de Precio en Supabase
         document.getElementById('formSolicitudPrecio').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const codigo = solCodigo.value.trim();
-            const cantidad = parseInt(solCantidad.value) || 1;
-
-            const { error } = await supabaseClient.from('solicitudes_precio').insert([{ codigo, cantidad }]);
-            
-            if (error) {
-                alert("Error al guardar solicitud: " + error.message);
-                return;
-            }
-
+            const codigo = document.getElementById('solCodigo').value.trim();
+            const cantidad = parseInt(document.getElementById('solCantidad').value) || 1;
+            await supabaseClient.from('solicitudes_precio').insert([{ codigo, cantidad }]);
             e.target.reset();
-            solCantidad.value = '1';
-            solCodigo.focus();
-            mostrarToast('¡Solicitud añadida exitosamente!');
+            mostrarToast('¡Solicitud añadida!');
             cargarDatos();
         });
 
-        async function eliminarProducto(id) {
-            await supabaseClient.from('productos_sistema').delete().eq('id', id);
-            mostrarToast('¡Registro eliminado!');
+        document.getElementById('formDestruccion').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const codigo = document.getElementById('desCodigo').value.trim();
+            const cantidad = parseInt(document.getElementById('desCantidad').value) || 1;
+            await supabaseClient.from('productos_destruccion').insert([{ codigo, cantidad }]);
+            e.target.reset();
+            mostrarToast('¡Registro de destrucción añadido!');
             cargarDatos();
-        }
+        });
 
-        async function eliminarSolicitudPrecio(id) {
-            await supabaseClient.from('solicitudes_precio').delete().eq('id', id);
-            mostrarToast('¡Solicitud eliminada!');
-            cargarDatos();
-        }
-
-        function actualizarContadorSolicitudes() {
-            contadorSolicitudes.textContent = solicitudesPrecio.length;
-            textoContadorPrecios.textContent = `Tienes ${solicitudesPrecio.length} solicitudes pendientes`;
-        }
+        async function eliminarProducto(id) { await supabaseClient.from('productos_sistema').delete().eq('id', id); cargarDatos(); }
+        async function eliminarSolicitudPrecio(id) { await supabaseClient.from('solicitudes_precio').delete().eq('id', id); cargarDatos(); }
+        async function eliminarDestruccion(id) { await supabaseClient.from('productos_destruccion').delete().eq('id', id); cargarDatos(); }
 
         function renderizarSolicitudesPrecio() {
-            gridSolicitudesPrecio.innerHTML = '';
-            actualizarContadorSolicitudes();
-
-            if (solicitudesPrecio.length === 0) {
-                gridSolicitudesPrecio.innerHTML = `
-                    <div style="grid-column: 1/-1; text-align: center; padding: 30px; background: #f8fafc; border-radius: 8px;">
-                        <p style="color: #64748b; font-weight: 500; margin-bottom: 6px;">No hay solicitudes de precios pendientes.</p>
-                    </div>`;
-                return;
-            }
+            const grid = document.getElementById('gridSolicitudesPrecio');
+            grid.innerHTML = '';
+            document.getElementById('contadorSolicitudes').textContent = solicitudesPrecio.length;
+            document.getElementById('textoContadorPrecios').textContent = `Tienes ${solicitudesPrecio.length} solicitudes pendientes`;
 
             solicitudesPrecio.forEach(s => {
                 const div = document.createElement('div');
                 div.className = 'barcode-item';
-                div.innerHTML = `
-                    <div style="font-size: 12px; color: #2563eb; font-weight: 600;">Cantidad: ${s.cantidad} etiqueta(s)</div>
-                    <div style="font-size: 11px; color: #64748b;">Cod: ${s.codigo}</div>
-                    <div class="barcode-box">
-                        <svg id="sol-barcode-${s.id}"></svg>
-                    </div>
-                    <button onclick="eliminarSolicitudPrecio(${s.id})" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; width: 100%;">Impreso / Eliminar</button>
-                `;
-                gridSolicitudesPrecio.appendChild(div);
+                div.innerHTML = `<div style="font-size: 12px; color: #2563eb; font-weight: 600;">Cantidad: ${s.cantidad}</div><div style="font-size: 11px; color: #64748b;">Cod: ${s.codigo}</div><div class="barcode-box"><svg id="sol-barcode-${s.id}"></svg></div><button onclick="eliminarSolicitudPrecio(${s.id})" style="background: #ef4444; color: white; border: none; padding: 6px; border-radius: 6px; width: 100%; cursor:pointer;">Impreso / Eliminar</button>`;
+                grid.appendChild(div);
+                setTimeout(() => JsBarcode(`#sol-barcode-${s.id}`, s.codigo, { format: "CODE128", width: 1.5, height: 40, displayValue: true }), 50);
+            });
+        }
 
-                setTimeout(() => {
-                    try {
-                        JsBarcode(`#sol-barcode-${s.id}`, s.codigo, {
-                            format: "CODE128",
-                            lineColor: "#000",
-                            width: 1.5,
-                            height: 50,
-                            displayValue: true
-                        });
-                    } catch (e) {
-                        console.error("Error generando código de barras:", e);
-                    }
-                }, 50);
+        function renderizarDestruccion() {
+            if (currentRole !== 'encargado') return;
+            const grid = document.getElementById('gridDestruccion');
+            grid.innerHTML = '';
+            document.getElementById('contadorDestruccion').textContent = productosDestruccion.length;
+            document.getElementById('textoContadorDestruccion').textContent = `Tienes ${productosDestruccion.length} registros pendientes`;
+
+            productosDestruccion.forEach(d => {
+                const div = document.createElement('div');
+                div.className = 'barcode-item';
+                div.innerHTML = `<div style="font-size: 12px; color: #dc2626; font-weight: 600;">A destruir: ${d.cantidad}</div><div style="font-size: 11px; color: #64748b;">Cod: ${d.codigo}</div><div class="barcode-box"><svg id="des-barcode-${d.id}"></svg></div><button onclick="eliminarDestruccion(${d.id})" style="background: #10b981; color: white; border: none; padding: 6px; border-radius: 6px; width: 100%; cursor:pointer;">Destruido / Eliminar</button>`;
+                grid.appendChild(div);
+                setTimeout(() => JsBarcode(`#des-barcode-${d.id}`, d.codigo, { format: "CODE128", width: 1.5, height: 40, displayValue: true }), 50);
             });
         }
 
@@ -529,166 +447,32 @@
             });
 
             const hoy = new Date().toISOString().split('T')[0];
-            const filtroTexto = inputBuscador.value.toLowerCase().trim();
-            const productosFiltrados = productos.filter(p => 
-                p.nombre.toLowerCase().includes(filtroTexto) || p.codigo.toLowerCase().includes(filtroTexto)
-            );
-
-            const nombresCategorias = {
-                'frio': '❄️ Nevera / Frío',
-                'legumbre_sin_cad': '🌱 Legumbres (Sin cad)',
-                'legumbre_con_cad': '📦 Legumbres Empacadas',
-                'pasillo1': '🛒 Pasillo 1: Limpieza',
-                'pasillo2': '🍿 Pasillo 2: Snack',
-                'pasillo3': '🌾 Pasillo 3: Granos',
-                'pasillo5': '🔩 Pasillo 5: Ferri'
-            };
-
+            const filtro = document.getElementById('inputBuscador').value.toLowerCase().trim();
+            const filtrados = productos.filter(p => p.nombre.toLowerCase().includes(filtro) || p.codigo.toLowerCase().includes(filtro));
             const tbodyUrgentes = document.getElementById('lista-urgentes');
-            let contadorUrgentes = 0;
+            let urgentesCount = 0;
 
-            productosFiltrados.forEach(p => {
-                let estadoBadge = '';
-                if (p.fecha_retiro < hoy) {
-                    estadoBadge = `<span class="badge-status bg-red">¡URGENTE!</span>`;
-                    
-                    // Agregar a la sección superior de Vencidos/Urgentes
-                    if (tbodyUrgentes) {
-                        contadorUrgentes++;
-                        const trUrgente = document.createElement('tr');
-                        trUrgente.innerHTML = `
-                            <td>
-                                <div style="font-weight: 500;">${p.nombre}</div>
-                                <div style="font-size: 10px; color: #6b7280;">Cod: ${p.codigo}</div>
-                            </td>
-                            <td>${nombresCategorias[p.categoria] || p.categoria}</td>
-                            <td style="font-weight: bold; color: #b91c1c;">${p.fecha_retiro}</td>
-                            <td>${estadoBadge}</td>
-                            <td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button></td>
-                        `;
-                        tbodyUrgentes.appendChild(trUrgente);
-                    }
-                } else if (p.fecha_retiro === hoy) {
-                    estadoBadge = `<span class="badge-status bg-amber">Retirar Hoy</span>`;
-                } else {
-                    estadoBadge = `<span class="badge-status bg-green">Vigente</span>`;
+            filtrados.forEach(p => {
+                let badge = p.fecha_retiro < hoy ? `<span class="badge-status bg-red">¡URGENTE!</span>` : (p.fecha_retiro === hoy ? `<span class="badge-status bg-amber">Retirar Hoy</span>` : `<span class="badge-status bg-green">Vigente</span>`);
+                
+                if (p.fecha_retiro < hoy && tbodyUrgentes) {
+                    urgentesCount++;
+                    const trU = document.createElement('tr');
+                    trU.innerHTML = `<td><div><b>${p.nombre}</b></div><small>Cod: ${p.codigo}</small></td><td>${p.categoria}</td><td style="color:red; font-weight:bold;">${p.fecha_retiro}</td><td>${badge}</td><td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button></td>`;
+                    tbodyUrgentes.appendChild(trU);
                 }
 
                 const tbody = document.getElementById(`lista-${p.categoria}`);
-                if (!tbody) return;
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
-                        <div style="font-weight: 500;">${p.nombre}</div>
-                        <div style="font-size: 10px; color: #6b7280;">Cod: ${p.codigo}</div>
-                    </td>
-                    <td>${p.fecha_principal}</td>
-                    <td style="font-weight: bold; color: #2563eb;">${p.fecha_retiro}</td>
-                    <td>${estadoBadge}</td>
-                    <td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button></td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            if (tbodyUrgentes && contadorUrgentes === 0) {
-                tbodyUrgentes.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #6b7280; padding: 12px;">No hay productos vencidos o pendientes de retiro. ¡Todo al día!</td></tr>`;
-            }
-        }
-
-        let camaraActiva = false;
-        const btnToggleCam = document.getElementById('btnToggleCam');
-        const btnCerrarCam = document.getElementById('btnCerrarCam');
-        const viewport = document.getElementById('interactive');
-
-        btnToggleCam.addEventListener('click', () => {
-            if (!camaraActiva) iniciarCamara(viewport, btnCerrarCam, btnToggleCam, (codigo) => {
-                inputCodigo.value = codigo;
-                procesarCodigoLeido(codigo);
-            });
-            else apagarCamara();
-        });
-        btnCerrarCam.addEventListener('click', apagarCamara);
-
-        let camaraSolicitudActiva = false;
-        const btnToggleCamSolicitud = document.getElementById('btnToggleCamSolicitud');
-        const btnCerrarCamSolicitud = document.getElementById('btnCerrarCamSolicitud');
-        const viewportSolicitud = document.getElementById('interactiveSolicitud');
-
-        btnToggleCamSolicitud.addEventListener('click', () => {
-            if (!camaraSolicitudActiva) {
-                viewportSolicitud.style.display = 'block';
-                btnCerrarCamSolicitud.classList.remove('hidden');
-                btnToggleCamSolicitud.textContent = "Apagar Cámara";
-                camaraSolicitudActiva = true;
-
-                Quagga.init({
-                    inputStream : { name : "Live", type : "LiveStream", target: viewportSolicitud, constraints: { facingMode: "environment" } },
-                    decoder : { readers : ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader"] }
-                }, function(err) {
-                    if (err) { alert("Error al abrir cámara"); apagarCamaraSolicitud(); return; }
-                    Quagga.start();
-                });
-
-                Quagga.onDetected(function(result) {
-                    const codigo = result.codeResult.code;
-                    if (codigo) {
-                        solCodigo.value = codigo;
-                        apagarCamaraSolicitud();
-                        solCantidad.focus();
-                    }
-                });
-            } else {
-                apagarCamaraSolicitud();
-            }
-        });
-
-        btnCerrarCamSolicitud.addEventListener('click', apagarCamaraSolicitud);
-
-        function apagarCamaraSolicitud() {
-            if (camaraSolicitudActiva) {
-                Quagga.stop();
-                viewportSolicitud.style.display = 'none';
-                btnCerrarCamSolicitud.classList.add('hidden');
-                btnToggleCamSolicitud.textContent = "📷 Escanear con Cámara del Teléfono";
-                camaraSolicitudActiva = false;
-            }
-        }
-
-        function iniciarCamara(targetViewport, closeBtn, toggleBtn, callback) {
-            targetViewport.style.display = 'block';
-            closeBtn.classList.remove('hidden');
-            toggleBtn.textContent = "Apagar Cámara";
-            camaraActiva = true;
-
-            Quagga.init({
-                inputStream : { name : "Live", type : "LiveStream", target: targetViewport, constraints: { facingMode: "environment" } },
-                decoder : { readers : ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader"] }
-            }, function(err) {
-                if (err) { alert("Error al abrir cámara"); apagarCamara(); return; }
-                Quagga.start();
-            });
-
-            Quagga.onDetected(function(result) {
-                const codigo = result.codeResult.code;
-                if (codigo) {
-                    apagarCamara();
-                    callback(codigo);
+                if (tbody) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td><div><b>${p.nombre}</b></div><small>Cod: ${p.codigo}</small></td><td>${p.fecha_principal}</td><td style="color:#2563eb; font-weight:bold;">${p.fecha_retiro}</td><td>${badge}</td><td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button></td>`;
+                    tbody.appendChild(tr);
                 }
             });
+            if (tbodyUrgentes && urgentesCount === 0) tbodyUrgentes.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#6b7280; padding:10px;">Todo al día.</td></tr>`;
         }
 
-        function apagarCamara() {
-            if (camaraActiva) {
-                Quagga.stop();
-                viewport.style.display = 'none';
-                btnCerrarCam.classList.add('hidden');
-                btnToggleCam.textContent = "📷 Usar Cámara Celular";
-                camaraActiva = false;
-            }
-        }
-
-        cargarDatos();
+        document.getElementById('inputBuscador').addEventListener('input', renderizarTablas);
     </script>
 </body>
 </html>
