@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Retiro y Solicitudes de Precio</title>
+    <title>Control de Retiro y Solicitudes de Precio - Por Pasillos</title>
     <!-- Librería para leer códigos de barras con la cámara -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <!-- Librería para generar códigos de barras visuales -->
@@ -53,11 +53,13 @@
 
         .grid-sections { display: grid; grid-template-columns: 1fr; gap: 20px; }
         @media(min-width: 1024px) { .grid-sections { grid-template-columns: repeat(2, 1fr); } }
-        .section-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid #ccc; }
-        .border-amber { border-top-color: #f59e0b; }
-        .border-emerald { border-top-color: #10b981; }
-        .border-sky { border-top-color: #0ea5e9; }
-        .border-purple { border-top-color: #8b5cf6; }
+        
+        .section-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid #ccc; margin-bottom: 20px; }
+        .border-pasillo1 { border-top-color: #3b82f6; } /* Limpieza */
+        .border-pasillo2 { border-top-color: #f59e0b; } /* Snack */
+        .border-pasillo3 { border-top-color: #10b981; } /* Granos */
+        .border-pasillo5 { border-top-color: #8b5cf6; } /* Ferri */
+
         .section-card h3 { font-size: 15px; font-weight: bold; color: #1f2937; margin-bottom: 2px; }
         .section-card p { margin-bottom: 12px; }
         .table-responsive { overflow-x: auto; }
@@ -84,26 +86,26 @@
     <div class="container">
         <!-- Notificación Flotante por Horario -->
         <div id="alertaHorario">
-            🚨 ¡HORARIO DE RETIRO ACTIVO (6:30 PM - 9:00 PM)! Tienes productos que deben retirarse de perchas, vitrinas, islas o frío.
+            🚨 ¡HORARIO DE RETIRO ACTIVO (6:30 PM - 9:00 PM)! Tienes productos que deben retirarse según los pasillos.
         </div>
 
         <!-- Encabezado -->
         <header>
             <div>
                 <h1>Control y Solicitudes</h1>
-                <p>Gestión de vencimientos y apartado independiente de solicitudes de precio.</p>
+                <p>Gestión de caducados por pasillos y apartado independiente de solicitudes de precio.</p>
             </div>
             <div class="tabs">
-                <button class="tab-btn active" onclick="cambiarTab('vencimientos')">📦 Control de Vencimientos</button>
+                <button class="tab-btn active" onclick="cambiarTab('vencimientos')">📦 Control por Pasillos</button>
                 <button class="tab-btn" onclick="cambiarTab('solicitudes')">🏷️ Solicitudes de Precio (<span id="contadorSolicitudes">0</span>)</button>
             </div>
         </header>
 
-        <!-- SECCIÓN 1: VENCIMIENTOS -->
+        <!-- SECCIÓN 1: VENCIMIENTOS POR PASILLOS -->
         <div id="seccion-vencimientos">
             <div class="card">
                 <h2>
-                    <span>Operaciones de Control</span>
+                    <span>Registrar Producto por Pasillo</span>
                     <span id="modoForm" style="font-size: 12px; color: #0284c7; font-weight: normal;">Modo: Ingreso manual o pistola</span>
                 </h2>
 
@@ -128,53 +130,31 @@
                     <input type="hidden" id="codigoBarraGuardar">
                     <div class="form-group">
                         <label>Nombre del Producto</label>
-                        <input type="text" id="nombre" required placeholder="Ej: Espinaca empacada, Yogurt...">
+                        <input type="text" id="nombre" required placeholder="Ej: Detergente, Galletas, Frijol...">
                     </div>
                     <div class="form-group">
-                        <label>Categoría / Regla</label>
-                        <select id="categoria" required>
-                            <option value="legumbre_sin_cad">Legumbre (Sin caducidad - Retiro 8 días)</option>
-                            <option value="legumbre_con_cad">Legumbre Empacada (Retiro 2 días antes)</option>
-                            <option value="frio">Producto de Frío (Retiro 5 días antes)</option>
-                            <option value="percha">Producto de Perchas/Islas/Vitrinas (Retiro 3 días antes)</option>
+                        <label>Pasillo / Sección</label>
+                        <select id="pasillo" required>
+                            <option value="pasillo1">Pasillo 1: Limpieza (Retiro 3 días antes)</option>
+                            <option value="pasillo2">Pasillo 2: Snack (Retiro 3 días antes)</option>
+                            <option value="pasillo3">Pasillo 3: Granos (Retiro 3 días antes)</option>
+                            <option value="pasillo5">Pasillo 5: Ferretería / Ferri (Retiro 3 días antes)</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label id="labelFecha">Fecha de Caducidad (o Elaboración si es legumbre)</label>
+                        <label>Fecha de Caducidad</label>
                         <input type="date" id="fechaPrincipal" required>
                     </div>
-                    <div class="form-group">
-                        <label>Fecha de Elaboración (Opcional)</label>
-                        <input type="date" id="fechaElaboracion">
-                    </div>
-                    <button type="submit" class="btn-submit" id="btnSubmitText">Guardar Producto en el Sistema</button>
+                    <button type="submit" class="btn-submit" id="btnSubmitText">Guardar en el Pasillo</button>
                 </form>
             </div>
 
-            <!-- Tablas de Secciones -->
+            <!-- Tablas de Pasillos -->
             <div class="grid-sections">
-                <div class="section-card border-amber">
-                    <h3>Legumbres (Sin fecha de caducidad)</h3>
-                    <p>Criterio: Se retiran a los 8 días de la elaboración.</p>
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Código / Producto</th>
-                                    <th>Elaboración</th>
-                                    <th>Fecha Retiro</th>
-                                    <th>Estado</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody id="lista-legumbre_sin_cad"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="section-card border-emerald">
-                    <h3>Legumbres Empacadas</h3>
-                    <p>Criterio: Se retiran 2 días antes de su vencimiento.</p>
+                <!-- Pasillo 1: Limpieza -->
+                <div class="section-card border-pasillo1">
+                    <h3>Pasillo 1: Limpieza</h3>
+                    <p>Control de caducidad y retiro en perchas de limpieza.</p>
                     <div class="table-responsive">
                         <table>
                             <thead>
@@ -186,14 +166,15 @@
                                     <th>Acción</th>
                                 </tr>
                             </thead>
-                            <tbody id="lista-legumbre_con_cad"></tbody>
+                            <tbody id="lista-pasillo1"></tbody>
                         </table>
                     </div>
                 </div>
 
-                <div class="section-card border-sky">
-                    <h3>Productos de Frío</h3>
-                    <p>Criterio: Se retiran 5 días antes de su vencimiento.</p>
+                <!-- Pasillo 2: Snack -->
+                <div class="section-card border-pasillo2">
+                    <h3>Pasillo 2: Snack</h3>
+                    <p>Control de caducidad y retiro en perchas de snacks.</p>
                     <div class="table-responsive">
                         <table>
                             <thead>
@@ -205,14 +186,15 @@
                                     <th>Acción</th>
                                 </tr>
                             </thead>
-                            <tbody id="lista-frio"></tbody>
+                            <tbody id="lista-pasillo2"></tbody>
                         </table>
                     </div>
                 </div>
 
-                <div class="section-card border-purple">
-                    <h3>Productos de Perchas, Vitrinas e Islas</h3>
-                    <p>Criterio: Se retiran 3 días antes de su vencimiento.</p>
+                <!-- Pasillo 3: Granos -->
+                <div class="section-card border-pasillo3">
+                    <h3>Pasillo 3: Granos</h3>
+                    <p>Control de caducidad y retiro en perchas de granos.</p>
                     <div class="table-responsive">
                         <table>
                             <thead>
@@ -224,21 +206,40 @@
                                     <th>Acción</th>
                                 </tr>
                             </thead>
-                            <tbody id="lista-percha"></tbody>
+                            <tbody id="lista-pasillo3"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pasillo 5: Ferri -->
+                <div class="section-card border-pasillo5">
+                    <h3>Pasillo 5: Ferri (Ferretería)</h3>
+                    <p>Control de caducidad y retiro en perchas de ferretería.</p>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Código / Producto</th>
+                                    <th>Caducidad</th>
+                                    <th>Fecha Retiro</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-pasillo5"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- SECCIÓN 2: SOLICITUDES DE PRECIO (SOLO CÓDIGO Y CANTIDAD + CÁMARA) -->
+        <!-- SECCIÓN 2: SOLICITUDES DE PRECIO -->
         <div id="seccion-solicitudes" class="hidden-section">
             <div class="price-request-card">
                 <h2>Apartado de Solicitudes de Precio</h2>
                 <div class="counter-badge" id="textoContadorPrecios">Tienes 0 solicitudes pendientes</div>
                 <p style="color: #64748b; font-size: 13px; margin-bottom: 16px;">Escanea o escribe el código de barras y cuántas etiquetas necesitas. Una vez impresas, elimínalas para mantener la lista limpia.</p>
                 
-                <!-- Formulario Independiente de Solicitudes -->
                 <div class="card" style="background: #f8fafc; border: 1px solid #cbd5e1; margin-bottom: 20px;">
                     <div style="margin-bottom: 12px;">
                         <button type="button" id="btnToggleCamSolicitud" class="btn-camara">📷 Escanear con Cámara del Teléfono</button>
@@ -261,24 +262,21 @@
                     </form>
                 </div>
 
-                <!-- Lista de Códigos de Barras Generados para Impresión -->
                 <div class="barcode-grid" id="gridSolicitudesPrecio"></div>
             </div>
         </div>
     </div>
 
     <script>
-        let productos = JSON.parse(localStorage.getItem('productos_retiro')) || [];
+        let productos = JSON.parse(localStorage.getItem('productos_pasillos')) || [];
         let solicitudesPrecio = JSON.parse(localStorage.getItem('solicitudes_precio')) || [];
 
         const inputCodigo = document.getElementById('codigoEscaneado');
         const inputBuscador = document.getElementById('inputBuscador');
         const codigoBarraGuardar = document.getElementById('codigoBarraGuardar');
         const inputNombre = document.getElementById('nombre');
-        const categoriaSelect = document.getElementById('categoria');
-        const labelFecha = document.getElementById('labelFecha');
+        const pasilloSelect = document.getElementById('pasillo');
         const fechaPrincipalInput = document.getElementById('fechaPrincipal');
-        const fechaElaboracionInput = document.getElementById('fechaElaboracion');
         const modoForm = document.getElementById('modoForm');
         const btnSubmitText = document.getElementById('btnSubmitText');
         const alertaHorario = document.getElementById('alertaHorario');
@@ -317,14 +315,6 @@
         setInterval(verificarHorarioNotificacion, 30000);
         verificarHorarioNotificacion();
 
-        categoriaSelect.addEventListener('change', () => {
-            if (categoriaSelect.value === 'legumbre_sin_cad') {
-                labelFecha.textContent = "Fecha de Elaboración";
-            } else {
-                labelFecha.textContent = "Fecha de Caducidad";
-            }
-        });
-
         inputCodigo.addEventListener('input', (e) => {
             const codigo = e.target.value.trim();
             if (codigo.length >= 3) procesarCodigoLeido(codigo);
@@ -336,7 +326,7 @@
             codigoBarraGuardar.value = codigo;
             if (existente) {
                 inputNombre.value = existente.nombre;
-                categoriaSelect.value = existente.categoria;
+                pasilloSelect.value = existente.pasillo;
                 modoForm.textContent = `Actualizando lote para: ${existente.nombre} (Cod: ${codigo})`;
                 modoForm.style.color = '#f59e0b';
                 btnSubmitText.textContent = "Registrar Nuevo Lote / Fecha";
@@ -344,34 +334,30 @@
                 modoForm.textContent = `Registrando nuevo código: ${codigo}`;
                 modoForm.style.color = '#10b981';
                 inputNombre.value = '';
-                btnSubmitText.textContent = "Guardar Producto en el Sistema";
+                btnSubmitText.textContent = "Guardar en el Pasillo";
             }
         }
 
         inputBuscador.addEventListener('input', renderizarTablas);
 
-        // Formulario de Vencimientos
+        // Formulario de Vencimientos por Pasillo
         document.getElementById('productForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const codigo = codigoBarraGuardar.value || inputCodigo.value.trim() || ('CODE-' + Math.floor(100000 + Math.random() * 900000));
             const nombre = inputNombre.value.trim();
-            const categoria = categoriaSelect.value;
+            const pasillo = pasilloSelect.value;
             const fechaStr = fechaPrincipalInput.value;
-            const elaboracionStr = fechaElaboracionInput.value || 'N/A';
 
+            // Retiro 3 días antes de la caducidad por defecto para los pasillos
             let fechaRetiro = new Date(fechaStr + 'T00:00:00');
-            if (categoria === 'legumbre_sin_cad') fechaRetiro.setDate(fechaRetiro.getDate() + 8);
-            else if (categoria === 'legumbre_con_cad') fechaRetiro.setDate(fechaRetiro.getDate() - 2);
-            else if (categoria === 'frio') fechaRetiro.setDate(fechaRetiro.getDate() - 5);
-            else if (categoria === 'percha') fechaRetiro.setDate(fechaRetiro.getDate() - 3);
+            fechaRetiro.setDate(fechaRetiro.getDate() - 3);
 
             const nuevoProducto = {
                 id: Date.now(),
                 codigo,
                 nombre,
-                categoria,
+                pasillo,
                 fechaPrincipal: fechaStr,
-                elaboracion: elaboracionStr,
                 fechaRetiro: fechaRetiro.toISOString().split('T')[0]
             };
 
@@ -382,11 +368,11 @@
             codigoBarraGuardar.value = '';
             modoForm.textContent = "Modo: Ingreso manual o pistola";
             modoForm.style.color = '#0284c7';
-            btnSubmitText.textContent = "Guardar Producto en el Sistema";
+            btnSubmitText.textContent = "Guardar en el Pasillo";
             inputCodigo.focus();
         });
 
-        // Formulario Independiente de Solicitudes de Precio (Solo Código y Cantidad)
+        // Formulario Independiente de Solicitudes de Precio
         document.getElementById('formSolicitudPrecio').addEventListener('submit', (e) => {
             e.preventDefault();
             const codigo = solCodigo.value.trim();
@@ -416,7 +402,7 @@
         }
 
         function guardarYRenderizarVencimientos() {
-            localStorage.setItem('productos_retiro', JSON.stringify(productos));
+            localStorage.setItem('productos_pasillos', JSON.stringify(productos));
             renderizarTablas();
         }
 
@@ -473,8 +459,8 @@
         }
 
         function renderizarTablas() {
-            ['legumbre_sin_cad', 'legumbre_con_cad', 'frio', 'percha'].forEach(cat => {
-                document.getElementById(`lista-${cat}`).innerHTML = '';
+            ['pasillo1', 'pasillo2', 'pasillo3', 'pasillo5'].forEach(pas => {
+                document.getElementById(`lista-${pas}`).innerHTML = '';
             });
 
             const hoy = new Date().toISOString().split('T')[0];
@@ -484,7 +470,7 @@
             );
 
             productosFiltrados.forEach(p => {
-                const tbody = document.getElementById(`lista-${p.categoria}`);
+                const tbody = document.getElementById(`lista-${p.pasillo}`);
                 if (!tbody) return;
 
                 let estadoBadge = '';
