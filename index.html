@@ -16,7 +16,7 @@
         #alertaHorario { display: none; background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
-        /* Notificación flotante de éxito */
+        /* Notificación Toast de Éxito */
         #toastExito { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; z-index: 1000; transition: opacity 0.3s ease; }
 
         header { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px; }
@@ -104,7 +104,7 @@
         <header>
             <div>
                 <h1>Control en Línea (Tiempo Real)</h1>
-                <p>Sincronizado en la nube con Supabase.</p>
+                <p>Sincronizado en la nube con Supabase (Registros Independientes).</p>
             </div>
             <div class="badge">
                 ☁️ Estado: Conectado a la Nube
@@ -119,7 +119,7 @@
         <div id="seccion-vencimientos">
             <div class="card">
                 <h2>
-                    <span>Registrar Producto en Línea</span>
+                    <span>Registrar Nuevo Lote / Producto</span>
                     <span id="modoForm" style="font-size: 12px; color: #0284c7; font-weight: normal;">Modo: Ingreso manual o pistola</span>
                 </h2>
 
@@ -141,7 +141,10 @@
 
                 <!-- Formulario -->
                 <form id="productForm" class="form-grid">
-                    <input type="hidden" id="codigoBarraGuardar">
+                    <div class="form-group">
+                        <label>Código de Barras</label>
+                        <input type="text" id="codigoInputForm" required placeholder="Código del producto...">
+                    </div>
                     <div class="form-group">
                         <label>Nombre del Producto</label>
                         <input type="text" id="nombre" required placeholder="Ej: Yogurt, Espinaca, Detergente...">
@@ -162,7 +165,7 @@
                         <label id="labelFecha">Fecha de Caducidad / Vencimiento</label>
                         <input type="date" id="fechaPrincipal" required>
                     </div>
-                    <button type="submit" class="btn-submit" id="btnSubmitText">Guardar en la Nube</button>
+                    <button type="submit" class="btn-submit" id="btnSubmitText">Guardar Nuevo Lote en la Nube</button>
                 </form>
             </div>
 
@@ -278,8 +281,8 @@
         let solicitudesPrecio = [];
 
         const inputCodigo = document.getElementById('codigoEscaneado');
+        const codigoInputForm = document.getElementById('codigoInputForm');
         const inputBuscador = document.getElementById('inputBuscador');
-        const codigoBarraGuardar = document.getElementById('codigoBarraGuardar');
         const inputNombre = document.getElementById('nombre');
         const categoriaSelect = document.getElementById('categoria');
         const labelFecha = document.getElementById('labelFecha');
@@ -332,10 +335,10 @@
         verificarHorarioNotificacion();
 
         async function cargarDatos() {
-            const { data: prodData } = await supabaseClient.from('productos_sistema').select('*');
+            const { data: prodData } = await supabaseClient.from('productos_sistema').select('*').order('id', { ascending: false });
             if (prodData) productos = prodData;
 
-            const { data: solData } = await supabaseClient.from('solicitudes_precio').select('*');
+            const { data: solData } = await supabaseClient.from('solicitudes_precio').select('*').order('id', { ascending: false });
             if (solData) solicitudesPrecio = solData;
 
             renderizarTablas();
@@ -362,33 +365,19 @@
 
         inputCodigo.addEventListener('input', (e) => {
             const codigo = e.target.value.trim();
-            if (codigo.length >= 3) procesarCodigoLeido(codigo);
-        });
-
-        function procesarCodigoLeido(codigo) {
-            if (!codigo) return;
-            const existente = productos.find(p => p.codigo === codigo);
-            codigoBarraGuardar.value = codigo;
-            if (existente) {
-                inputNombre.value = existente.nombre;
-                categoriaSelect.value = existente.categoria;
-                modoForm.textContent = `Actualizando lote para: ${existente.nombre} (Cod: ${codigo})`;
-                modoForm.style.color = '#f59e0b';
-                btnSubmitText.textContent = "Actualizar en la Nube";
-            } else {
-                modoForm.textContent = `Registrando nuevo código: ${codigo}`;
+            if (codigo.length >= 3) {
+                codigoInputForm.value = codigo;
+                modoForm.textContent = `Código escaneado: ${codigo} (Se creará un nuevo registro)`;
                 modoForm.style.color = '#10b981';
-                inputNombre.value = '';
-                btnSubmitText.textContent = "Guardar en la Nube";
             }
-        }
+        });
 
         inputBuscador.addEventListener('input', renderizarTablas);
 
-        // Guardar Vencimiento en Supabase
+        // Guardar Vencimiento en Supabase (Siempre independiente / nuevo registro)
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const codigo = codigoBarraGuardar.value || inputCodigo.value.trim() || ('CODE-' + Math.floor(100000 + Math.random() * 900000));
+            const codigo = codigoInputForm.value.trim() || ('CODE-' + Math.floor(100000 + Math.random() * 900000));
             const nombre = inputNombre.value.trim();
             const categoria = categoriaSelect.value;
             const fechaStr = fechaPrincipalInput.value;
@@ -407,31 +396,35 @@
                 fecha_retiro: fechaRetiro.toISOString().split('T')[0]
             };
 
-            const existente = productos.find(p => p.codigo === codigo);
-            if (existente) {
-                await supabaseClient.from('productos_sistema').update(objetoSupabase).eq('id', existente.id);
-            } else {
-                await supabaseClient.from('productos_sistema').insert([objetoSupabase]);
+            // Inserta siempre un registro independiente nuevo
+            const { error } = await supabaseClient.from('productos_sistema').insert([objetoSupabase]);
+            
+            if (error) {
+                alert("Error al guardar en la nube: " + error.message);
+                return;
             }
 
             e.target.reset();
             inputCodigo.value = '';
-            codigoBarraGuardar.value = '';
             modoForm.textContent = "Modo: Ingreso manual o pistola";
             modoForm.style.color = '#0284c7';
-            btnSubmitText.textContent = "Guardar en la Nube";
             inputCodigo.focus();
-            mostrarToast('¡Producto guardado exitosamente!');
+            mostrarToast('¡Nuevo registro guardado exitosamente!');
             cargarDatos();
         });
 
-        // Guardar Solicitud de Precio en Supabase
+        // Guardar Solicitud de Precio en Supabase (Independiente)
         document.getElementById('formSolicitudPrecio').addEventListener('submit', async (e) => {
             e.preventDefault();
             const codigo = solCodigo.value.trim();
             const cantidad = parseInt(solCantidad.value) || 1;
 
-            await supabaseClient.from('solicitudes_precio').insert([{ codigo, cantidad }]);
+            const { error } = await supabaseClient.from('solicitudes_precio').insert([{ codigo, cantidad }]);
+            
+            if (error) {
+                alert("Error al guardar solicitud: " + error.message);
+                return;
+            }
 
             e.target.reset();
             solCantidad.value = '1';
@@ -442,7 +435,7 @@
 
         async function eliminarProducto(id) {
             await supabaseClient.from('productos_sistema').delete().eq('id', id);
-            mostrarToast('¡Producto eliminado exitosamente!');
+            mostrarToast('¡Registro eliminado exitosamente!');
             cargarDatos();
         }
 
@@ -545,7 +538,9 @@
         btnToggleCam.addEventListener('click', () => {
             if (!camaraActiva) iniciarCamara(viewport, btnCerrarCam, btnToggleCam, (codigo) => {
                 inputCodigo.value = codigo;
-                procesarCodigoLeido(codigo);
+                codigoInputForm.value = codigo;
+                modoForm.textContent = `Código escaneado: ${codigo} (Nuevo registro)`;
+                modoForm.style.color = '#10b981';
             });
             else apagarCamara();
         });
