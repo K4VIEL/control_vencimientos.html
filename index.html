@@ -5,9 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Control en Línea - Sistema de Roles</title>
-    <!-- Librerías de Supabase, Quagga y JsBarcode -->
+    <!-- Librería de Supabase y JsBarcode -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
         :root {
@@ -74,8 +73,11 @@
         .btn-camara { background: #0284c7; color: white; border: none; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; }
         @media(min-width: 768px) { .btn-camara { width: fit-content; } }
         
-        #interactive, #interactiveSolicitud, #interactiveDestruccion { position: relative; width: 100%; height: 240px; border: 2px solid var(--primary-color); border-radius: 12px; overflow: hidden; margin-bottom: 12px; background: #000; display: none; }
-        #interactive canvas, #interactive video, #interactiveSolicitud canvas, #interactiveSolicitud video, #interactiveDestruccion canvas, #interactiveDestruccion video { width: 100%; height: 100%; object-fit: cover; }
+        /* Contenedor de cámara nativa */
+        .video-container { position: relative; width: 100%; height: 260px; border: 2px solid var(--primary-color); border-radius: 12px; overflow: hidden; margin-bottom: 12px; background: #000; display: none; }
+        .video-container video { width: 100%; height: 100%; object-native-fit: cover; }
+        .scan-laser { position: absolute; top: 50%; left: 10%; right: 10%; height: 2px; background: #ef4444; box-shadow: 0 0 8px #ef4444; animation: scanAnim 2s infinite ease-in-out; }
+        @keyframes scanAnim { 0%, 100% { top: 20%; } 50% { top: 80%; } }
 
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
         @media(min-width: 768px) { .form-grid { grid-template-columns: repeat(4, 1fr); } }
@@ -177,11 +179,16 @@
                     <div class="scan-box">
                         <label style="font-weight: 700; color: var(--primary-color);">Código de Barras</label>
                         <input type="text" id="codigoEscaneado" placeholder="Pasa la pistola o escribe...">
-                        <button type="button" id="btnToggleCam" class="btn-camara">📷 Usar Cámara Celular</button>
+                        <button type="button" id="btnToggleCam" class="btn-camara">📷 Escanear con Cámara</button>
                     </div>
                 </div>
-                <div id="interactive"></div>
-                <button type="button" id="btnCerrarCam" class="hidden-section" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; width: 100%; font-weight: bold;">Cerrar Cámara</button>
+                
+                <!-- Visor de Cámara Nativa -->
+                <div id="videoContainer" class="video-container">
+                    <video id="webcamVideo" autoplay playsinline muted></video>
+                    <div class="scan-laser"></div>
+                </div>
+                <button type="button" id="btnCerrarCam" class="hidden-section" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 13px; width: 100%; font-weight: bold;">Cerrar Cámara</button>
 
                 <form id="productForm" class="form-grid">
                     <input type="hidden" id="codigoBarraGuardar">
@@ -266,9 +273,12 @@
                 <h2 style="font-size: 16px;">Solicitudes de Precio</h2>
                 <div class="counter-badge" id="textoContadorPrecios">Tienes 0 solicitudes pendientes</div>
                 <div class="card" style="background: var(--bg-color); border: 1px solid var(--border-color); margin-bottom: 16px;">
-                    <div style="margin-bottom: 10px;"><button type="button" id="btnToggleCamSolicitud" class="btn-camara">📷 Escanear con Cámara</button></div>
-                    <div id="interactiveSolicitud"></div>
-                    <button type="button" id="btnCerrarCamSolicitud" class="hidden-section" style="margin-bottom: 10px; background: #ef4444; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 12px; width: 100%; font-weight: bold;">Cerrar Cámara</button>
+                    <div style="margin-bottom: 10px;"><button type="button" onclick="iniciarEscaneoNativo((codigo) => { document.getElementById('solCodigo').value = codigo; document.getElementById('solCantidad').focus(); })" class="btn-camara">📷 Escanear con Cámara</button></div>
+                    <div id="videoContainerSolicitud" class="video-container">
+                        <video id="webcamVideoSolicitud" autoplay playsinline muted></video>
+                        <div class="scan-laser"></div>
+                    </div>
+                    <button type="button" id="btnCerrarCamSolicitud" class="hidden-section" style="margin-bottom: 10px; background: #ef4444; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 13px; width: 100%; font-weight: bold;">Cerrar Cámara</button>
                     <form id="formSolicitudPrecio" class="form-grid" style="grid-template-columns: 1fr;">
                         <div class="form-group"><label>Código de Barras</label><input type="text" id="solCodigo" required placeholder="Código..."></div>
                         <div class="form-group"><label>Cantidad</label><input type="number" id="solCantidad" min="1" value="1" required></div>
@@ -285,9 +295,12 @@
                 <h2 style="font-size: 16px;">Destrucción de Productos</h2>
                 <div class="counter-badge" id="textoContadorDestruccion">Tienes 0 registros pendientes</div>
                 <div class="card" style="background: var(--bg-color); border: 1px solid var(--border-color); margin-bottom: 16px;">
-                    <div style="margin-bottom: 10px;"><button type="button" id="btnToggleCamDestruccion" class="btn-camara">📷 Escanear con Cámara</button></div>
-                    <div id="interactiveDestruccion"></div>
-                    <button type="button" id="btnCerrarCamDestruccion" class="hidden-section" style="margin-bottom: 10px; background: #ef4444; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 12px; width: 100%; font-weight: bold;">Cerrar Cámara</button>
+                    <div style="margin-bottom: 10px;"><button type="button" onclick="iniciarEscaneoNativo((codigo) => { document.getElementById('desCodigo').value = codigo; const encontrado = productos.find(p => p.codigo === codigo); if (encontrado) { document.getElementById('desNombre').value = encontrado.nombre; document.getElementById('desCantidad').value = encontrado.cantidad || 1; } else { document.getElementById('desNombre').focus(); } })" class="btn-camara">📷 Escanear con Cámara</button></div>
+                    <div id="videoContainerDestruccion" class="video-container">
+                        <video id="webcamVideoDestruccion" autoplay playsinline muted></video>
+                        <div class="scan-laser"></div>
+                    </div>
+                    <button type="button" id="btnCerrarCamDestruccion" class="hidden-section" style="margin-bottom: 10px; background: #ef4444; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 13px; width: 100%; font-weight: bold;">Cerrar Cámara</button>
                     
                     <form id="formDestruccion" class="form-grid" style="grid-template-columns: 1fr;">
                         <div class="form-group"><label>Código de Barras</label><input type="text" id="desCodigo" required placeholder="Código..."></div>
@@ -356,6 +369,9 @@
         let productosDestruccion = [];
         let historialDestruccion = [];
         let listaUsuarios = [];
+
+        let mediaStreamGlobal = null;
+        let scannerActivo = false;
 
         const loginScreen = document.getElementById('loginScreen');
         const appContainer = document.getElementById('appContainer');
@@ -440,6 +456,7 @@
         });
 
         function cerrarSesion() {
+            detenerCamaraNativa();
             localStorage.removeItem('usuario_actual');
             localStorage.removeItem('rol_actual');
             usuarioActual = null;
@@ -451,7 +468,7 @@
         }
 
         function cambiarTab(tab) {
-            apagarTodasLasCamaras();
+            detenerCamaraNativa();
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('seccion-vencimientos').classList.add('hidden-section');
             document.getElementById('seccion-solicitudes').classList.add('hidden-section');
@@ -773,77 +790,91 @@
 
         document.getElementById('inputBuscador').addEventListener('input', renderizarTablas);
 
-        function apagarTodasLasCamaras() {
-            try { Quagga.stop(); } catch(e) {}
-            ['interactive', 'interactiveSolicitud', 'interactiveDestruccion'].forEach(id => {
+        // CONTROL DE CÁMARA NATIVA PERFECTA
+        function detenerCamaraNativa() {
+            scannerActivo = false;
+            if (mediaStreamGlobal) {
+                mediaStreamGlobal.getTracks().forEach(track => track.stop());
+                mediaStreamGlobal = null;
+            }
+            ['videoContainer', 'videoContainerSolicitud', 'videoContainerDestruccion'].forEach(id => {
                 const el = document.getElementById(id);
-                if(el) el.style.display = 'none';
+                if (el) el.style.display = 'none';
             });
             ['btnCerrarCam', 'btnCerrarCamSolicitud', 'btnCerrarCamDestruccion'].forEach(id => {
                 const el = document.getElementById(id);
-                if(el) el.classList.add('hidden-section');
+                if (el) el.classList.add('hidden-section');
             });
-            const b1 = document.getElementById('btnToggleCam'); if(b1) b1.textContent = "📷 Usar Cámara Celular";
-            const b2 = document.getElementById('btnToggleCamSolicitud'); if(b2) b2.textContent = "📷 Escanear con Cámara";
-            const b3 = document.getElementById('btnToggleCamDestruccion'); if(b3) b3.textContent = "📷 Escanear con Cámara";
         }
 
-        // MOTOR MEJORADO DE CÁMARA PARA MÓVIL (QUAGGA OPTIMIZADO)
-        function iniciarEscaneoCamara(targetId, inputDestinoCallback) {
-            apagarTodasLasCamaras();
-            const viewport = document.getElementById(targetId);
-            let btnCerrarId = targetId === 'interactive' ? 'btnCerrarCam' : (targetId === 'interactiveSolicitud' ? 'btnCerrarCamSolicitud' : 'btnCerrarCamDestruccion');
-            let btnCerrar = document.getElementById(btnCerrarId);
+        async function iniciarEscaneoNativo(onSuccessCallback) {
+            detenerCamaraNativa();
+            
+            // Determinar qué elementos usar según la sección activa
+            let containerId = 'videoContainer';
+            let videoId = 'webcamVideo';
+            let btnCerrarId = 'btnCerrarCam';
 
-            viewport.style.display = 'block';
+            if (!document.getElementById('seccion-vencimientos').classList.contains('hidden-section')) {
+                containerId = 'videoContainer'; videoId = 'webcamVideo'; btnCerrarId = 'btnCerrarCam';
+            } else if (!document.getElementById('seccion-solicitudes').classList.contains('hidden-section')) {
+                containerId = 'videoContainerSolicitud'; videoId = 'webcamVideoSolicitud'; btnCerrarId = 'btnCerrarCamSolicitud';
+            } else if (!document.getElementById('seccion-destruccion').classList.contains('hidden-section')) {
+                containerId = 'videoContainerDestruccion'; videoId = 'webcamVideoDestruccion'; btnCerrarId = 'btnCerrarCamDestruccion';
+            }
+
+            const videoContainer = document.getElementById(containerId);
+            const videoElement = document.getElementById(videoId);
+            const btnCerrar = document.getElementById(btnCerrarId);
+
+            videoContainer.style.display = 'block';
             btnCerrar.classList.remove('hidden-section');
 
-            Quagga.init({
-                inputStream : {
-                    name : "Live",
-                    type : "LiveStream",
-                    target: viewport,
-                    constraints: {
-                        facingMode: "environment",
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    }
-                },
-                locator: {
-                    patchSize: "medium",
-                    halfSample: true
-                },
-                numOfWorkers: 2,
-                frequency: 10,
-                decoder : { 
-                    readers : [
-                        "ean_reader",
-                        "ean_8_reader",
-                        "code_128_reader",
-                        "upc_reader",
-                        "upc_e_reader"
-                    ] 
-                }
-            }, function(err) {
-                if (err) {
-                    alert("No se pudo iniciar la cámara: Asegúrate de dar permisos de cámara en tu navegador.");
-                    apagarTodasLasCamaras();
-                    return;
-                }
-                Quagga.start();
-            });
+            try {
+                mediaStreamGlobal = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }
+                });
+                videoElement.srcObject = mediaStreamGlobal;
+                await videoElement.play();
+            } catch (err) {
+                alert("No se pudo acceder a la cámara. Asegúrate de dar permisos en tu navegador.");
+                detenerCamaraNativa();
+                return;
+            }
 
-            Quagga.onDetected(function(result) {
-                const codigo = result.codeResult.code;
-                if (codigo) {
-                    apagarTodasLasCamaras();
-                    inputDestinoCallback(codigo);
+            // Verificar si el navegador soporta el detector nativo de códigos de barras
+            if (!('BarcodeDetector' in window)) {
+                alert("Tu navegador no soporta el escaneo nativo rápido. Por favor usa Google Chrome actualizado en tu Android.");
+                detenerCamaraNativa();
+                return;
+            }
+
+            const barcodeDetector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'code_128', 'upc_a', 'upc_e'] });
+            scannerActivo = true;
+
+            async function scanFrame() {
+                if (!scannerActivo) return;
+                try {
+                    const barcodes = await barcodeDetector.detect(videoElement);
+                    if (barcodes.length > 0 && scannerActivo) {
+                        const codigoDetectado = barcodes[0].rawValue;
+                        detenerCamaraNativa();
+                        onSuccessCallback(codigoDetectado);
+                        return;
+                    }
+                } catch (e) {
+                    // Ignorar errores menores de cuadro mientras escanea
                 }
-            });
+                if (scannerActivo) {
+                    requestAnimationFrame(scanFrame);
+                }
+            }
+
+            requestAnimationFrame(scanFrame);
         }
 
         document.getElementById('btnToggleCam').addEventListener('click', () => {
-            iniciarEscaneoCamara('interactive', (codigo) => {
+            iniciarEscaneoNativo((codigo) => {
                 document.getElementById('codigoEscaneado').value = codigo;
                 codigoBarraGuardar.value = codigo;
                 const existente = productos.find(p => p.codigo === codigo);
@@ -857,29 +888,10 @@
                 }
             });
         });
-        document.getElementById('btnCerrarCam').addEventListener('click', apagarTodasLasCamaras);
 
-        document.getElementById('btnToggleCamSolicitud').addEventListener('click', () => {
-            iniciarEscaneoCamara('interactiveSolicitud', (codigo) => {
-                document.getElementById('solCodigo').value = codigo;
-                document.getElementById('solCantidad').focus();
-            });
-        });
-        document.getElementById('btnCerrarCamSolicitud').addEventListener('click', apagarTodasLasCamaras);
-
-        document.getElementById('btnToggleCamDestruccion').addEventListener('click', () => {
-            iniciarEscaneoCamara('interactiveDestruccion', (codigo) => {
-                document.getElementById('desCodigo').value = codigo;
-                const encontrado = productos.find(p => p.codigo === codigo);
-                if (encontrado) {
-                    document.getElementById('desNombre').value = encontrado.nombre;
-                    document.getElementById('desCantidad').value = encontrado.cantidad || 1;
-                } else {
-                    document.getElementById('desNombre').focus();
-                }
-            });
-        });
-        document.getElementById('btnCerrarCamDestruccion').addEventListener('click', apagarTodasLasCamaras);
+        document.getElementById('btnCerrarCam').addEventListener('click', detenerCamaraNativa);
+        document.getElementById('btnCerrarCamSolicitud').addEventListener('click', detenerCamaraNativa);
+        document.getElementById('btnCerrarCamDestruccion').addEventListener('click', detenerCamaraNativa);
     </script>
 </body>
 </html>
