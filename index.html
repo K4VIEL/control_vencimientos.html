@@ -11,7 +11,6 @@
         body { background-color: #f3f4f6; color: #1f2937; padding: 16px; }
         .container { max-width: 1200px; margin: 0 auto; }
         
-        /* Notificación Flotante Diaria (6:30 PM - 9:00 PM) */
         #alertaHorario { display: none; background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
@@ -87,7 +86,7 @@
             </div>
         </header>
 
-        <!-- Controles Principales (Escáner y Buscador) -->
+        <!-- Controles Principales -->
         <div class="card">
             <h2>
                 <span>Operaciones de Control</span>
@@ -111,7 +110,7 @@
             <div id="interactive" class="viewport"></div>
             <button type="button" id="btnCerrarCam" class="hidden" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
 
-            <!-- Formulario (Caducidad obligatoria, elaboración opcional) -->
+            <!-- Formulario -->
             <form id="productForm" class="form-grid">
                 <input type="hidden" id="codigoBarraGuardar">
                 <div class="form-group">
@@ -234,7 +233,6 @@
         const btnSubmitText = document.getElementById('btnSubmitText');
         const alertaHorario = document.getElementById('alertaHorario');
 
-        // Notificación flotante de 6:30 PM (18:30) a 9:00 PM (21:00)
         function verificarHorarioNotificacion() {
             const ahora = new Date();
             const horas = ahora.getHours();
@@ -258,10 +256,11 @@
             }
         });
 
-        inputCodigo.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                procesarCodigoLeido(inputCodigo.value.trim());
+        // Detección automática al escribir o pasar la pistola (sin requerir Enter obligatorio)
+        inputCodigo.addEventListener('input', (e) => {
+            const codigo = e.target.value.trim();
+            if (codigo.length >= 3) { // Comienza a buscar cuando hay al menos 3 caracteres
+                procesarCodigoLeido(codigo);
             }
         });
 
@@ -276,15 +275,12 @@
                 modoForm.textContent = `Actualizando lote para: ${existente.nombre} (Cod: ${codigo})`;
                 modoForm.style.color = '#f59e0b';
                 btnSubmitText.textContent = "Registrar Nuevo Lote / Fecha";
-                alert(`¡El producto "${existente.nombre}" ya existe! Ingresa la nueva fecha abajo.`);
             } else {
                 modoForm.textContent = `Registrando nuevo código: ${codigo}`;
                 modoForm.style.color = '#10b981';
                 inputNombre.value = '';
                 btnSubmitText.textContent = "Guardar Producto en el Sistema";
-                alert(`Código ${codigo} nuevo. Completa el nombre para darlo de alta.`);
             }
-            inputNombre.focus();
         }
 
         inputBuscador.addEventListener('input', renderizarTablas);
@@ -292,7 +288,7 @@
         document.getElementById('productForm').addEventListener('submit', (e) => {
             e.preventDefault();
             
-            const codigo = codigoBarraGuardar.value || 'SIN-CODIGO-' + Date.now();
+            const codigo = codigoBarraGuardar.value || inputCodigo.value.trim() || ('SIN-CODIGO-' + Date.now());
             const nombre = inputNombre.value.trim();
             const categoria = categoriaSelect.value;
             const fechaStr = fechaPrincipalInput.value;
@@ -323,6 +319,7 @@
             productos.push(nuevoProducto);
             guardarYRenderizar();
             e.target.reset();
+            inputCodigo.value = '';
             codigoBarraGuardar.value = '';
             modoForm.textContent = "Modo: Ingreso manual o pistola";
             modoForm.style.color = '#0284c7';
