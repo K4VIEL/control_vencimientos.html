@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control de Retiro de Productos - Vencimientos</title>
+    <!-- Librería para leer códigos de barras con la cámara -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
         body { background-color: #f3f4f6; color: #1f2937; padding: 16px; }
@@ -13,16 +15,30 @@
         h1 { font-size: 20px; font-weight: bold; color: #111827; }
         p { font-size: 13px; color: #6b7280; }
         .badge { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 500; display: inline-block; }
+        
         .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; }
-        .card h2 { font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 16px; }
+        .card h2 { font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Barra de Escaneo Rápido */
+        .scan-bar { background: #eff6ff; border: 2px dashed #3b82f6; padding: 16px; border-radius: 10px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
+        @media(min-width: 768px) { .scan-bar { flex-direction: row; align-items: center; justify-content: space-between; } }
+        .scan-input { flex: 1; padding: 10px; border: 1px solid #93c5fd; border-radius: 8px; font-size: 14px; outline: none; background: #fff; }
+        .btn-camara { background: #0284c7; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-camara:hover { background: #0369a1; }
+
+        /* Contenedor de la cámara */
+        #interactive.viewport { position: relative; width: 100%; height: 250px; border: 2px solid #3b82f6; border-radius: 8px; overflow: hidden; margin-bottom: 15px; background: #000; display: none; }
+        #interactive.viewport canvas, #interactive.viewport video { width: 100%; height: 100%; object-fit: cover; }
+
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
         @media(min-width: 768px) { .form-grid { grid-template-columns: repeat(4, 1fr); } }
         .form-group { display: flex; flex-direction: column; gap: 4px; }
         label { font-size: 12px; font-weight: 500; color: #4b5563; }
         input, select { width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 10px; font-size: 13px; outline: none; }
         input:focus, select:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.2); }
-        .btn-submit { background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; grid-column: 1 / -1; justify-self: end; }
-        .btn-submit:hover { background: #1d4ed8; }
+        .btn-submit { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; grid-column: 1 / -1; justify-self: end; }
+        .btn-submit:hover { background: #059669; }
+
         .grid-sections { display: grid; grid-template-columns: 1fr; gap: 20px; }
         @media(min-width: 1024px) { .grid-sections { grid-template-columns: repeat(2, 1fr); } }
         .section-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid #ccc; }
@@ -52,17 +68,38 @@
         <header>
             <div>
                 <h1>Control de Retiro de Productos</h1>
-                <p>Gestión de perchas, vitrinas, islas y productos de frío según políticas internas.</p>
+                <p>Escaneo rápido de barras y gestión por vencimientos internos.</p>
             </div>
             <div class="badge">
                 Regla Activa: Legumbres (8d / 2d) | Frío (5d) | Perchas (3d)
             </div>
         </header>
 
-        <!-- Formulario de Registro -->
+        <!-- Formulario Inteligente y Escáner -->
         <div class="card">
-            <h2>Registrar Nuevo Producto</h2>
+            <h2>
+                <span>Registro y Escáner de Productos</span>
+                <span id="modoForm" style="font-size: 12px; color: #0284c7; font-weight: normal;">Modo: Ingreso manual o pistola</span>
+            </h2>
+
+            <!-- Barra de Escaneo Rápido -->
+            <div class="scan-bar">
+                <div style="flex: 1;">
+                    <label style="font-weight: 600; color: #1e40af; margin-bottom: 4px; display: block;">Escanear Código de Barras (Pistola o Teclado)</label>
+                    <input type="text" id="codigoEscaneado" class="scan-input" placeholder="Haz clic aquí y pasa la pistola o escribe el código..." autofocus>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: flex-end;">
+                    <button type="button" id="btnToggleCam" class="btn-camara">📷 Usar Cámara Celular</button>
+                </div>
+            </div>
+
+            <!-- Visor de la Cámara -->
+            <div id="interactive" class="viewport"></div>
+            <button type="button" id="btnCerrarCam" class="hidden" style="margin-bottom: 15px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
+
+            <!-- Formulario de Registro -->
             <form id="productForm" class="form-grid">
+                <input type="hidden" id="codigoBarraGuardar">
                 <div class="form-group">
                     <label>Nombre del Producto</label>
                     <input type="text" id="nombre" required placeholder="Ej: Espinaca empacada, Yogurt...">
@@ -84,14 +121,12 @@
                     <label id="labelFecha2">Fecha de Caducidad Impresa</label>
                     <input type="date" id="fecha2">
                 </div>
-                <button type="submit" class="btn-submit">Registrar y Calcular Retiro</button>
+                <button type="submit" class="btn-submit">Guardar Producto en el Sistema</button>
             </form>
         </div>
 
         <!-- Secciones de Resultados -->
         <div class="grid-sections">
-            
-            <!-- Sección 1: Legumbres sin caducidad -->
             <div class="section-card border-amber">
                 <h3>Legumbres (Sin fecha de caducidad)</h3>
                 <p>Criterio: Se retiran a los 8 días de la elaboración.</p>
@@ -99,7 +134,7 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Producto</th>
+                                <th>Código / Producto</th>
                                 <th>Elaboración</th>
                                 <th>Fecha Retiro</th>
                                 <th>Estado</th>
@@ -111,7 +146,6 @@
                 </div>
             </div>
 
-            <!-- Sección 2: Legumbres empacadas -->
             <div class="section-card border-emerald">
                 <h3>Legumbres Empacadas</h3>
                 <p>Criterio: Se retiran 2 días antes de su vencimiento.</p>
@@ -119,7 +153,7 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Producto</th>
+                                <th>Código / Producto</th>
                                 <th>Caducidad</th>
                                 <th>Fecha Retiro</th>
                                 <th>Estado</th>
@@ -131,7 +165,6 @@
                 </div>
             </div>
 
-            <!-- Sección 3: Productos de Frío -->
             <div class="section-card border-sky">
                 <h3>Productos de Frío</h3>
                 <p>Criterio: Se retiran 5 días antes de su vencimiento.</p>
@@ -139,7 +172,7 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Producto</th>
+                                <th>Código / Producto</th>
                                 <th>Caducidad</th>
                                 <th>Fecha Retiro</th>
                                 <th>Estado</th>
@@ -151,7 +184,6 @@
                 </div>
             </div>
 
-            <!-- Sección 4: Productos de Perchas -->
             <div class="section-card border-purple">
                 <h3>Productos de Perchas, Vitrinas e Islas</h3>
                 <p>Criterio: Se retiran 3 días antes de su vencimiento.</p>
@@ -159,7 +191,7 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Producto</th>
+                                <th>Código / Producto</th>
                                 <th>Caducidad</th>
                                 <th>Fecha Retiro</th>
                                 <th>Estado</th>
@@ -170,20 +202,52 @@
                     </table>
                 </div>
             </div>
-
         </div>
     </div>
 
-    <!-- Script de Lógica -->
+    <!-- Script de Lógica y Escáner -->
     <script>
         let productos = JSON.parse(localStorage.getItem('productos_retiro')) || [];
 
+        const inputCodigo = document.getElementById('codigoEscaneado');
+        const codigoBarraGuardar = document.getElementById('codigoBarraGuardar');
+        const inputNombre = document.getElementById('nombre');
         const categoriaSelect = document.getElementById('categoria');
         const fecha2Container = document.getElementById('fecha2Container');
         const labelFecha1 = document.getElementById('labelFecha1');
         const labelFecha2 = document.getElementById('labelFecha2');
         const fecha2Input = document.getElementById('fecha2');
+        const modoForm = document.getElementById('modoForm');
 
+        // Manejar cuando se escanea con pistola o se escribe un código
+        inputCodigo.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                procesarCodigoLeido(inputCodigo.value.trim());
+            }
+        });
+
+        function procesarCodigoLeido(codigo) {
+            if (!codigo) return;
+            
+            // Buscar si ya está registrado
+            const existente = productos.find(p => p.codigo === codigo);
+
+            if (existente) {
+                alert(`¡Producto ya registrado!\nNombre: ${existente.nombre}\nFecha de Retiro: ${existente.fechaRetiro}`);
+                inputCodigo.value = '';
+                inputCodigo.focus();
+            } else {
+                // No está registrado: abrir formulario y prellenar código
+                codigoBarraGuardar.value = codigo;
+                modoForm.textContent = `Registrando nuevo código: ${codigo}`;
+                modoForm.style.color = '#10b981';
+                inputNombre.focus();
+                alert(`El código ${codigo} no está registrado. Por favor completa los datos abajo para guardarlo.`);
+            }
+        }
+
+        // Dinámica del formulario de categorías
         categoriaSelect.addEventListener('change', (e) => {
             if (e.target.value === 'legumbre_sin_cad') {
                 labelFecha1.textContent = "Fecha de Elaboración";
@@ -197,11 +261,13 @@
             }
         });
 
+        // Registrar producto nuevo
         document.getElementById('productForm').addEventListener('submit', (e) => {
             e.preventDefault();
             
-            const nombre = document.getElementById('nombre').value;
-            const categoria = document.getElementById('categoria').value;
+            const codigo = codigoBarraGuardar.value || 'SIN-CODIGO-' + Date.now();
+            const nombre = inputNombre.value;
+            const categoria = categoriaSelect.value;
             const fecha1 = document.getElementById('fecha1').value;
             const fecha2 = document.getElementById('fecha2').value;
 
@@ -222,6 +288,7 @@
 
             const nuevoProducto = {
                 id: Date.now(),
+                codigo,
                 nombre,
                 categoria,
                 fecha1,
@@ -232,8 +299,12 @@
             productos.push(nuevoProducto);
             guardarYRenderizar();
             e.target.reset();
+            codigoBarraGuardar.value = '';
             fecha2Container.classList.add('hidden');
             labelFecha1.textContent = "Fecha de Elaboración";
+            modoForm.textContent = "Modo: Ingreso manual o pistola";
+            modoForm.style.color = '#0284c7';
+            inputCodigo.focus();
         });
 
         function eliminarProducto(id) {
@@ -259,16 +330,19 @@
 
                 let estadoBadge = '';
                 if (p.fechaRetiro < hoy) {
-                    estadoBadge = `<span class="badge-status bg-red">¡URGENTE: Retirar!</span>`;
+                    estadoBadge = `<span class="badge-status bg-red">¡URGENTE!</span>`;
                 } else if (p.fechaRetiro === hoy) {
                     estadoBadge = `<span class="badge-status bg-amber">Retirar Hoy</span>`;
                 } else {
-                    estadoBadge = `<span class="badge-status bg-green">En vigencia</span>`;
+                    estadoBadge = `<span class="badge-status bg-green">Vigente</span>`;
                 }
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td style="font-weight: 500;">${p.nombre}</td>
+                    <td>
+                        <div style="font-weight: 500;">${p.nombre}</div>
+                        <div style="font-size: 10px; color: #6b7280;">Cod: ${p.codigo}</div>
+                    </td>
                     <td>${p.fecha2 !== 'N/A' ? p.fecha2 : p.fecha1}</td>
                     <td style="font-weight: bold; color: #2563eb;">${p.fechaRetiro}</td>
                     <td>${estadoBadge}</td>
@@ -276,6 +350,70 @@
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        // Configuración de la cámara con QuaggaJS para lectura móvil
+        let camaraActiva = false;
+        const btnToggleCam = document.getElementById('btnToggleCam');
+        const btnCerrarCam = document.getElementById('btnCerrarCam');
+        const viewport = document.getElementById('interactive');
+
+        btnToggleCam.addEventListener('click', () => {
+            if (!camaraActiva) {
+                iniciarCamara();
+            } else {
+                apagarCamara();
+            }
+        });
+
+        btnCerrarCam.addEventListener('click', apagarCamara);
+
+        function iniciarCamara() {
+            viewport.style.display = 'block';
+            btnCerrarCam.classList.remove('hidden');
+            btnToggleCam.textContent = "Apagar Cámara";
+            camaraActiva = true;
+
+            Quagga.init({
+                inputStream : {
+                    name : "Live",
+                    type : "LiveStream",
+                    target: viewport,
+                    constraints: {
+                        facingMode: "environment" // Usa la cámara trasera del teléfono
+                    }
+                },
+                decoder : {
+                    readers : ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader"]
+                }
+            }, function(err) {
+                if (err) {
+                    console.error(err);
+                    alert("No se pudo iniciar la cámara. Revisa los permisos.");
+                    apagarCamara();
+                    return;
+                }
+                Quagga.start();
+            });
+
+            Quagga.onDetected(function(result) {
+                const codigo = result.codeResult.code;
+                if (codigo) {
+                    inputCodigo.value = codigo;
+                    apagarCamara();
+                    procesarCodigoLeido(codigo);
+                }
+            });
+        }
+
+        function apagarCamara() {
+            if (camaraActiva) {
+                Quagga.stop();
+                viewport.style.display = 'none';
+                btnCerrarCam.classList.add('hidden');
+                btnToggleCam.textContent = "📷 Usar Cámara Celular";
+                camaraActiva = false;
+            }
         }
 
         renderizarTablas();
