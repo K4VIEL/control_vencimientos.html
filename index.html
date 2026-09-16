@@ -73,7 +73,6 @@
         .btn-camara { background: #0284c7; color: white; border: none; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; }
         @media(min-width: 768px) { .btn-camara { width: fit-content; } }
         
-        /* Contenedor del lector universal */
         .reader-container { width: 100%; margin-bottom: 12px; display: none; border: 2px solid var(--primary-color); border-radius: 12px; overflow: hidden; background: #000; }
         
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
@@ -116,7 +115,7 @@
         
         .barcode-item { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
         .barcode-box { background: white; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; display: flex; justify-content: center; }
-        .counter-badge { background: #dbeafe; color: #1e40af; padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: 12px; display: inline-block; margin-bottom: 12px; }
+        .counter-badge { background: #dbeafe; color: #1e40af; padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: 12px; display: inline-block; }
         [data-theme="dark"] .counter-badge { background: #450a0a; color: #fca5a5; }
         .hidden-section { display: none !important; }
         
@@ -180,7 +179,6 @@
                     </div>
                 </div>
                 
-                <!-- Lector Universal -->
                 <div id="readerVencimientos" class="reader-container"></div>
                 <button type="button" id="btnCerrarCam" class="hidden-section" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 13px; width: 100%; font-weight: bold;">Cerrar Cámara</button>
 
@@ -264,14 +262,22 @@
         <!-- SECCIÓN 2: SOLICITUDES DE PRECIO -->
         <div id="seccion-solicitudes" class="hidden-section">
             <div class="price-request-card">
-                <h2 style="font-size: 16px;">Solicitudes de Precio</h2>
-                <div class="counter-badge" id="textoContadorPrecios">Tienes 0 solicitudes pendientes</div>
+                <h2>Solicitudes de Precio</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                    <div class="counter-badge" id="textoContadorPrecios" style="margin-bottom: 0;">Tienes 0 solicitudes pendientes</div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" onclick="alternarOcultarUltimoDigito()" id="btnOcultarDigito" style="background: #0284c7; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px;">🙈 Ocultar Último Dígito</button>
+                        <button type="button" onclick="imprimirYBorrarTodosPrecios()" style="background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px;">🖨️ Precio Impreso (Borrar Todos)</button>
+                    </div>
+                </div>
+
                 <div class="card" style="background: var(--bg-color); border: 1px solid var(--border-color); margin-bottom: 16px;">
                     <div style="margin-bottom: 10px;"><button type="button" id="btnToggleCamSolicitud" class="btn-camara">📷 Escanear con Cámara</button></div>
                     <div id="readerSolicitudes" class="reader-container"></div>
                     <button type="button" id="btnCerrarCamSolicitud" class="hidden-section" style="margin-bottom: 10px; background: #ef4444; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 13px; width: 100%; font-weight: bold;">Cerrar Cámara</button>
+                    
                     <form id="formSolicitudPrecio" class="form-grid" style="grid-template-columns: 1fr;">
-                        <div class="form-group"><label>Código de Barras</label><input type="text" id="solCodigo" required placeholder="Código..."></div>
+                        <div class="form-group"><label>Código de Barras</label><input type="text" id="solCodigo" required placeholder="Código completo..."></div>
                         <div class="form-group"><label>Cantidad</label><input type="number" id="solCantidad" min="1" value="1" required></div>
                         <button type="submit" style="background: var(--primary-color); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%;">Generar Etiqueta</button>
                     </form>
@@ -358,6 +364,7 @@
         let historialDestruccion = [];
         let listaUsuarios = [];
 
+        let ocultarUltimoDigitoGlobal = false;
         let html5QrCode = null;
 
         const loginScreen = document.getElementById('loginScreen');
@@ -617,16 +624,47 @@
             cargarDatos();
         });
 
+        // REGISTRO DE SOLICITUD DE PRECIO (COMPLETO)
         document.getElementById('formSolicitudPrecio').addEventListener('submit', async (e) => {
             e.preventDefault();
             const codigo = document.getElementById('solCodigo').value.trim();
             const cantidad = parseInt(document.getElementById('solCantidad').value) || 1;
+
             await supabaseClient.from('solicitudes_precio').insert([{ codigo, cantidad }]);
             e.target.reset();
             document.getElementById('solCantidad').value = '1';
             mostrarToast('¡Solicitud añadida!');
             cargarDatos();
         });
+
+        function alternarOcultarUltimoDigito() {
+            ocultarUltimoDigitoGlobal = !ocultarUltimoDigitoGlobal;
+            const btn = document.getElementById('btnOcultarDigito');
+            if (ocultarUltimoDigitoGlobal) {
+                btn.style.background = '#047857';
+                btn.textContent = "👁️ Mostrar Último Dígito";
+                mostrarToast("Último dígito ocultado en las etiquetas");
+            } else {
+                btn.style.background = '#0284c7';
+                btn.textContent = "🙈 Ocultar Último Dígito";
+                mostrarToast("Mostrando código completo");
+            }
+            renderizarSolicitudesPrecio();
+        }
+
+        async function imprimirYBorrarTodosPrecios() {
+            if (solicitudesPrecio.length === 0) {
+                alert("No hay solicitudes pendientes.");
+                return;
+            }
+            if (!confirm("¿Deseas marcar todas las solicitudes como impresas y borrarlas de la lista?")) return;
+
+            for (let s of solicitudesPrecio) {
+                await supabaseClient.from('solicitudes_precio').delete().eq('id', s.id);
+            }
+            mostrarToast('¡Todas las etiquetas se marcaron como impresas!');
+            cargarDatos();
+        }
 
         document.getElementById('formDestruccion').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -693,11 +731,21 @@
             document.getElementById('textoContadorPrecios').textContent = `Tienes ${solicitudesPrecio.length} solicitudes pendientes`;
 
             solicitudesPrecio.forEach(s => {
+                let codigoMostrar = s.codigo;
+                if (ocultarUltimoDigitoGlobal && codigoMostrar.length > 1) {
+                    codigoMostrar = codigoMostrar.slice(0, -1);
+                }
+
                 const div = document.createElement('div');
                 div.className = 'barcode-item';
-                div.innerHTML = `<div style="font-size: 12px; color: var(--primary-color); font-weight: 600;">Cantidad solicitada: ${s.cantidad}</div><div style="font-size: 11px; color: var(--text-muted);">Cod: ${s.codigo}</div><div class="barcode-box"><svg id="sol-barcode-${s.id}"></svg></div><button onclick="eliminarSolicitudPrecio(${s.id})" style="background: #ef4444; color: white; border: none; padding: 8px; border-radius: 8px; width: 100%; cursor:pointer; font-weight:bold;">Impreso / Eliminar</button>`;
+                div.innerHTML = `
+                    <div style="font-size: 12px; color: var(--primary-color); font-weight: 600;">Cantidad solicitada: ${s.cantidad}</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Cod: ${codigoMostrar} ${ocultarUltimoDigitoGlobal ? '(Sin último dígito)' : ''}</div>
+                    <div class="barcode-box"><svg id="sol-barcode-${s.id}"></svg></div>
+                    <button onclick="eliminarSolicitudPrecio(${s.id})" style="background: #ef4444; color: white; border: none; padding: 8px; border-radius: 8px; width: 100%; cursor:pointer; font-weight:bold;">Impreso / Eliminar</button>
+                `;
                 grid.appendChild(div);
-                setTimeout(() => JsBarcode(`#sol-barcode-${s.id}`, s.codigo, { format: "CODE128", width: 1.5, height: 40, displayValue: true }), 50);
+                setTimeout(() => JsBarcode(`#sol-barcode-${s.id}`, codigoMostrar, { format: "CODE128", width: 1.5, height: 40, displayValue: true }), 50);
             });
         }
 
@@ -865,4 +913,3 @@
     </script>
 </body>
 </html>
-
