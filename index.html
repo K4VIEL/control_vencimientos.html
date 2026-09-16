@@ -234,7 +234,7 @@
             </div>
         </div>
 
-        <!-- SECCIÓN 3: DESTRUCCIÓN (PARCIAL / PENDIENTES) -->
+        <!-- SECCIÓN 3: DESTRUCCIÓN (CON NOMBRE, CANTIDAD, USUARIO Y HISTORIAL) -->
         <div id="seccion-destruccion" class="hidden-section">
             <div class="destruction-card">
                 <h2>Apartado de Destrucción de Productos</h2>
@@ -243,13 +243,25 @@
                     <div style="margin-bottom: 12px;"><button type="button" id="btnToggleCamDestruccion" class="btn-camara">📷 Escanear con Cámara</button></div>
                     <div id="interactiveDestruccion"></div>
                     <button type="button" id="btnCerrarCamDestruccion" class="hidden-section" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
-                    <form id="formDestruccion" class="form-grid" style="grid-template-columns: 2fr 1fr auto;">
+                    
+                    <form id="formDestruccion" class="form-grid" style="grid-template-columns: 2fr 2fr 1fr auto;">
                         <div class="form-group"><label>Código de Barras</label><input type="text" id="desCodigo" required placeholder="Código..."></div>
-                        <div class="form-group"><label>Cantidad a Destruir</label><input type="number" id="desCantidad" min="1" value="1" required></div>
+                        <div class="form-group"><label>Nombre / Descripción del Producto</label><input type="text" id="desNombre" required placeholder="Ej: Yogurt Entero 1L"></div>
+                        <div class="form-group"><label>Cantidad</label><input type="number" id="desCantidad" min="1" value="1" required></div>
                         <div style="display: flex; align-items: flex-end;"><button type="submit" style="background: #dc2626; color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; height: 38px;">Dejar Pendiente</button></div>
                     </form>
                 </div>
+                
+                <h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 15px; color: #374151;">Productos Pendientes por Destruir</h3>
                 <div class="barcode-grid" id="gridDestruccion"></div>
+
+                <h3 style="margin-top: 32px; margin-bottom: 12px; font-size: 15px; color: #047857;">📜 Historial de Destrucciones Realizadas</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Producto / Código</th><th>Cantidad</th><th>Encargado</th><th>Fecha y Hora</th></tr></thead>
+                        <tbody id="lista-historial-destruccion"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -296,6 +308,7 @@
         let productos = [];
         let solicitudesPrecio = [];
         let productosDestruccion = [];
+        let historialDestruccion = [];
         let listaUsuarios = [];
 
         const loginScreen = document.getElementById('loginScreen');
@@ -416,6 +429,9 @@
             if (rolActual === 'encargado' || rolActual === 'creador') {
                 const { data: desData } = await supabaseClient.from('productos_destruccion').select('*').order('id', { ascending: false });
                 if (desData) productosDestruccion = desData;
+
+                const { data: histData } = await supabaseClient.from('historial_destruccion').select('*').order('id', { ascending: false }).limit(50);
+                if (histData) historialDestruccion = histData;
             }
 
             if (rolActual === 'creador') {
@@ -506,6 +522,7 @@
             .on('postgres_changes', { event: '*', schema: 'public', table: 'productos_sistema' }, () => cargarDatos())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitudes_precio' }, () => cargarDatos())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'productos_destruccion' }, () => cargarDatos())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'historial_destruccion' }, () => cargarDatos())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'perfiles_usuarios' }, () => { if(rolActual === 'creador') cargarUsuariosSistema(); })
             .subscribe();
 
@@ -544,8 +561,16 @@
         document.getElementById('formDestruccion').addEventListener('submit', async (e) => {
             e.preventDefault();
             const codigo = document.getElementById('desCodigo').value.trim();
+            const nombreProd = document.getElementById('desNombre').value.trim();
             const cantidad = parseInt(document.getElementById('desCantidad').value) || 1;
-            await supabaseClient.from('productos_destruccion').insert([{ codigo, cantidad }]);
+
+            await supabaseClient.from('productos_destruccion').insert([{
+                codigo: codigo,
+                nombre: nombreProd,
+                cantidad: cantidad,
+                usuario: usuarioActual || 'desconocido'
+            }]);
+
             e.target.reset();
             desCantidad.value = '1';
             mostrarToast('¡Dejado pendiente para destrucción!');
@@ -554,7 +579,21 @@
 
         async function eliminarProducto(id) { await supabaseClient.from('productos_sistema').delete().eq('id', id); cargarDatos(); }
         async function eliminarSolicitudPrecio(id) { await supabaseClient.from('solicitudes_precio').delete().eq('id', id); cargarDatos(); }
-        async function eliminarDestruccion(id) { await supabaseClient.from('productos_destruccion').delete().eq('id', id); cargarDatos(); }
+        
+        async function completarDestruccion(id, codigo, nombreProd, cantidad) {
+            // Guardar en el historial con fecha, hora, nombre y usuario actual
+            await supabaseClient.from('historial_destruccion').insert([{
+                codigo: codigo,
+                nombre: nombreProd,
+                cantidad: cantidad,
+                usuario: usuarioActual || 'desconocido'
+            }]);
+
+            // Eliminar de pendientes
+            await supabaseClient.from('productos_destruccion').delete().eq('id', id);
+            mostrarToast('¡Destrucción completada y registrada en el historial!');
+            cargarDatos();
+        }
 
         function renderizarSolicitudesPrecio() {
             const grid = document.getElementById('gridSolicitudesPrecio');
@@ -573,6 +612,8 @@
 
         function renderizarDestruccion() {
             if (rolActual !== 'encargado' && rolActual !== 'creador') return;
+            
+            // Renderizar pendientes
             const grid = document.getElementById('gridDestruccion');
             grid.innerHTML = '';
             document.getElementById('contadorDestruccion').textContent = productosDestruccion.length;
@@ -582,14 +623,34 @@
                 const div = document.createElement('div');
                 div.className = 'barcode-item';
                 div.innerHTML = `
+                    <div style="font-size: 13px; font-weight: bold; color: #1f2937;">${d.nombre || 'Sin descripción'}</div>
                     <div style="font-size: 12px; color: #dc2626; font-weight: 600;">Cantidad pendiente: ${d.cantidad}</div>
-                    <div style="font-size: 11px; color: #64748b;">Cod: ${d.codigo}</div>
+                    <div style="font-size: 11px; color: #64748b;">Cod: ${d.codigo} | Creado por: <b>${d.usuario || 'N/A'}</b></div>
                     <div class="barcode-box"><svg id="des-barcode-${d.id}"></svg></div>
-                    <button onclick="eliminarDestruccion(${d.id})" style="background: #10b981; color: white; border: none; padding: 6px; border-radius: 6px; width: 100%; cursor:pointer;">Completar / Destruir</button>
+                    <button onclick="completarDestruccion(${d.id}, '${d.codigo}', '${d.nombre || ''}', ${d.cantidad})" style="background: #10b981; color: white; border: none; padding: 6px; border-radius: 6px; width: 100%; cursor:pointer;">Completar / Destruir</button>
                 `;
                 grid.appendChild(div);
                 setTimeout(() => JsBarcode(`#des-barcode-${d.id}`, d.codigo, { format: "CODE128", width: 1.5, height: 40, displayValue: true }), 50);
             });
+
+            // Renderizar Historial
+            const tbodyHistorial = document.getElementById('lista-historial-destruccion');
+            tbodyHistorial.innerHTML = '';
+            if (historialDestruccion.length === 0) {
+                tbodyHistorial.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#6b7280; padding:10px;">No hay registros en el historial.</td></tr>`;
+            } else {
+                historialDestruccion.forEach(h => {
+                    const fechaFormateada = new Date(h.fecha_hora).toLocaleString();
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><b>${h.nombre || 'Producto'}</b><br><small style="color:#64748b;">Cod: ${h.codigo}</small></td>
+                        <td><span style="color:#dc2626; font-weight:bold;">${h.cantidad}</span></td>
+                        <td><code>${h.usuario}</code></td>
+                        <td style="font-size:11px; color:#4b5563;">${fechaFormateada}</td>
+                    `;
+                    tbodyHistorial.appendChild(tr);
+                });
+            }
         }
 
         function renderizarTablas() {
@@ -626,7 +687,7 @@
 
         document.getElementById('inputBuscador').addEventListener('input', renderizarTablas);
 
-        // CONFIGURACIÓN DE CÁMARAS CON QUAGGA (ROBUSTA)
+        // CONFIGURACIÓN DE CÁMARAS CON QUAGGA
         function apagarTodasLasCamaras() {
             try { Quagga.stop(); } catch(e) {}
             ['interactive', 'interactiveSolicitud', 'interactiveDestruccion'].forEach(id => {
@@ -680,7 +741,6 @@
         document.getElementById('btnToggleCam').addEventListener('click', () => {
             iniciarEscaneoCamara('interactive', (codigo) => {
                 document.getElementById('codigoEscaneado').value = codigo;
-                // Disparar lógica de autocompletado de producto si aplica
                 codigoBarraGuardar.value = codigo;
                 const existente = productos.find(p => p.codigo === codigo);
                 if (existente) {
@@ -705,11 +765,17 @@
         document.getElementById('btnToggleCamDestruccion').addEventListener('click', () => {
             iniciarEscaneoCamara('interactiveDestruccion', (codigo) => {
                 document.getElementById('desCodigo').value = codigo;
-                document.getElementById('desCantidad').focus();
+                
+                // Si el producto ya está registrado en el sistema, autocompleta el nombre
+                const encontrado = productos.find(p => p.codigo === codigo);
+                if (encontrado) {
+                    document.getElementById('desNombre').value = encontrado.nombre;
+                } else {
+                    document.getElementById('desNombre').focus();
+                }
             });
         });
         document.getElementById('btnCerrarCamDestruccion').addEventListener('click', apagarTodasLasCamaras);
     </script>
 </body>
 </html>
-
