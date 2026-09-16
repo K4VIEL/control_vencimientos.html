@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -787,6 +788,7 @@
             const b3 = document.getElementById('btnToggleCamDestruccion'); if(b3) b3.textContent = "📷 Escanear con Cámara";
         }
 
+        // MOTOR MEJORADO DE CÁMARA PARA MÓVIL (QUAGGA OPTIMIZADO)
         function iniciarEscaneoCamara(targetId, inputDestinoCallback) {
             apagarTodasLasCamaras();
             const viewport = document.getElementById(targetId);
@@ -801,12 +803,30 @@
                     name : "Live",
                     type : "LiveStream",
                     target: viewport,
-                    constraints: { facingMode: "environment" }
+                    constraints: {
+                        facingMode: "environment",
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
                 },
-                decoder : { readers : ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader"] }
+                locator: {
+                    patchSize: "medium",
+                    halfSample: true
+                },
+                numOfWorkers: 2,
+                frequency: 10,
+                decoder : { 
+                    readers : [
+                        "ean_reader",
+                        "ean_8_reader",
+                        "code_128_reader",
+                        "upc_reader",
+                        "upc_e_reader"
+                    ] 
+                }
             }, function(err) {
                 if (err) {
-                    alert("No se pudo iniciar la cámara: " + err);
+                    alert("No se pudo iniciar la cámara: Asegúrate de dar permisos de cámara en tu navegador.");
                     apagarTodasLasCamaras();
                     return;
                 }
@@ -863,4 +883,3 @@
     </script>
 </body>
 </html>
-
