@@ -16,7 +16,6 @@
         #alertaHorario { display: none; background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
-        /* Notificación Toast de Éxito */
         #toastExito { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; z-index: 1000; transition: opacity 0.3s ease; }
 
         header { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px; }
@@ -104,7 +103,7 @@
         <header>
             <div>
                 <h1>Control en Línea (Tiempo Real)</h1>
-                <p>Sincronizado en la nube con Supabase (Autocompletado inteligente).</p>
+                <p>Sincronizado en la nube con Supabase.</p>
             </div>
             <div class="badge">
                 ☁️ Estado: Conectado a la Nube
@@ -119,13 +118,13 @@
         <div id="seccion-vencimientos">
             <div class="card">
                 <h2>
-                    <span>Registrar Nuevo Lote / Producto</span>
+                    <span>Registrar Producto</span>
                     <span id="modoForm" style="font-size: 12px; color: #0284c7; font-weight: normal;">Modo: Ingreso manual o pistola</span>
                 </h2>
 
                 <div class="tools-grid">
                     <div class="scan-box">
-                        <label style="font-weight: 600; color: #1e40af;">Escanear Código de Barras</label>
+                        <label style="font-weight: 600; color: #1e40af;">Escanear / Ingresar Código de Barras</label>
                         <input type="text" id="codigoEscaneado" placeholder="Pasa la pistola o escribe aquí..." autofocus>
                         <button type="button" id="btnToggleCam" class="btn-camara">📷 Usar Cámara Celular</button>
                     </div>
@@ -139,12 +138,9 @@
                 <div id="interactive" class="viewport"></div>
                 <button type="button" id="btnCerrarCam" class="hidden" style="margin-bottom: 12px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Cerrar Cámara</button>
 
-                <!-- Formulario -->
+                <!-- Formulario Único con un solo campo de código -->
                 <form id="productForm" class="form-grid">
-                    <div class="form-group">
-                        <label>Código de Barras</label>
-                        <input type="text" id="codigoInputForm" required placeholder="Código del producto...">
-                    </div>
+                    <input type="hidden" id="codigoBarraGuardar">
                     <div class="form-group">
                         <label>Nombre del Producto</label>
                         <input type="text" id="nombre" required placeholder="Ej: Yogurt, Espinaca, Detergente...">
@@ -165,7 +161,7 @@
                         <label id="labelFecha">Fecha de Caducidad / Vencimiento</label>
                         <input type="date" id="fechaPrincipal" required>
                     </div>
-                    <button type="submit" class="btn-submit" id="btnSubmitText">Guardar Nuevo Lote en la Nube</button>
+                    <button type="submit" class="btn-submit" id="btnSubmitText">Guardar en la Nube</button>
                 </form>
             </div>
 
@@ -281,7 +277,7 @@
         let solicitudesPrecio = [];
 
         const inputCodigo = document.getElementById('codigoEscaneado');
-        const codigoInputForm = document.getElementById('codigoInputForm');
+        const codigoBarraGuardar = document.getElementById('codigoBarraGuardar');
         const inputBuscador = document.getElementById('inputBuscador');
         const inputNombre = document.getElementById('nombre');
         const categoriaSelect = document.getElementById('categoria');
@@ -321,7 +317,7 @@
         }
 
         function verificarHorarioNotificacion() {
-            constahora = new Date();
+            const ahora = new Date();
             const horas = ahora.getHours();
             const minutos = ahora.getMinutes();
             const tiempoMinutos = horas * 60 + minutos;
@@ -363,41 +359,34 @@
             }
         });
 
-        // Autocompletar al escribir o escanear en el campo del formulario de código
-        codigoInputForm.addEventListener('input', (e) => {
-            const codigo = e.target.value.trim();
-            verificarAutocompletadoCodigo(codigo);
-        });
-
+        // Escanear o escribir en el buscador principal autocompleta y llena los datos
         inputCodigo.addEventListener('input', (e) => {
             const codigo = e.target.value.trim();
-            if (codigo.length >= 2) {
-                codigoInputForm.value = codigo;
-                verificarAutocompletadoCodigo(codigo);
-            }
+            if (codigo.length >= 2) procesarCodigoLeido(codigo);
         });
 
-        function verificarAutocompletadoCodigo(codigo) {
+        function procesarCodigoLeido(codigo) {
             if (!codigo) return;
-            // Buscar si ya existe este código en registros previos para autocompletar nombre y categoría
+            codigoBarraGuardar.value = codigo;
             const existente = productos.find(p => p.codigo === codigo);
             if (existente) {
                 inputNombre.value = existente.nombre;
                 categoriaSelect.value = existente.categoria;
-                modoForm.textContent = `⚡ Producto reconocido: Autocompletado (${existente.nombre}). Ingrese nueva fecha.`;
+                modoForm.textContent = `⚡ Autocompletado: ${existente.nombre} (Cod: ${codigo})`;
                 modoForm.style.color = '#10b981';
             } else {
-                modoForm.textContent = `Modo: Ingreso manual o pistola (Nuevo producto)`;
+                modoForm.textContent = `Registrando nuevo código: ${codigo}`;
                 modoForm.style.color = '#0284c7';
+                inputNombre.value = '';
             }
         }
 
         inputBuscador.addEventListener('input', renderizarTablas);
 
-        // Guardar Vencimiento en Supabase (Siempre independiente / nuevo registro)
+        // Guardar Vencimiento en Supabase (Cada registro es independiente)
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const codigo = codigoInputForm.value.trim() || ('CODE-' + Math.floor(100000 + Math.random() * 900000));
+            const codigo = codigoBarraGuardar.value || inputCodigo.value.trim() || ('CODE-' + Math.floor(100000 + Math.random() * 900000));
             const nombre = inputNombre.value.trim();
             const categoria = categoriaSelect.value;
             const fechaStr = fechaPrincipalInput.value;
@@ -425,14 +414,15 @@
 
             e.target.reset();
             inputCodigo.value = '';
+            codigoBarraGuardar.value = '';
             modoForm.textContent = "Modo: Ingreso manual o pistola";
             modoForm.style.color = '#0284c7';
             inputCodigo.focus();
-            mostrarToast('¡Nuevo lote guardado exitosamente!');
+            mostrarToast('¡Guardado exitosamente en la nube!');
             cargarDatos();
         });
 
-        // Guardar Solicitud de Precio en Supabase (Independiente)
+        // Guardar Solicitud de Precio en Supabase
         document.getElementById('formSolicitudPrecio').addEventListener('submit', async (e) => {
             e.preventDefault();
             const codigo = solCodigo.value.trim();
@@ -448,19 +438,19 @@
             e.target.reset();
             solCantidad.value = '1';
             solCodigo.focus();
-            mostrarToast('¡Solicitud de precio añadida exitosamente!');
+            mostrarToast('¡Solicitud añadida exitosamente!');
             cargarDatos();
         });
 
         async function eliminarProducto(id) {
             await supabaseClient.from('productos_sistema').delete().eq('id', id);
-            mostrarToast('¡Registro eliminado exitosamente!');
+            mostrarToast('¡Registro eliminado!');
             cargarDatos();
         }
 
         async function eliminarSolicitudPrecio(id) {
             await supabaseClient.from('solicitudes_precio').delete().eq('id', id);
-            mostrarToast('¡Solicitud eliminada exitosamente!');
+            mostrarToast('¡Solicitud eliminada!');
             cargarDatos();
         }
 
@@ -543,22 +533,10 @@
                     <td>${p.fecha_principal}</td>
                     <td style="font-weight: bold; color: #2563eb;">${p.fecha_retiro}</td>
                     <td>${estadoBadge}</td>
-                    <td>
-                        <button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button> | 
-                        <button style="background:none; border:none; color:#2563eb; cursor:pointer;" onclick="precargarFormulario('${p.codigo}', '${p.nombre.replace(/'/g, "\\'")}', '${p.categoria}')">Usar</button>
-                    </td>
+                    <td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Eliminar</button></td>
                 `;
                 tbody.appendChild(tr);
             });
-        }
-
-        function precargarFormulario(codigo, nombre, categoria) {
-            codigoInputForm.value = codigo;
-            inputNombre.value = nombre;
-            categoriaSelect.value = categoria;
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            mostrarToast(`¡Datos cargados para nuevo lote de ${nombre}!`);
-            fechaPrincipalInput.focus();
         }
 
         let camaraActiva = false;
@@ -569,8 +547,7 @@
         btnToggleCam.addEventListener('click', () => {
             if (!camaraActiva) iniciarCamara(viewport, btnCerrarCam, btnToggleCam, (codigo) => {
                 inputCodigo.value = codigo;
-                codigoInputForm.value = codigo;
-                verificarAutocompletadoCodigo(codigo);
+                procesarCodigoLeido(codigo);
             });
             else apagarCamara();
         });
