@@ -81,30 +81,30 @@
         .counter-badge { background: #dbeafe; color: #1e40af; padding: 6px 16px; border-radius: 99px; font-weight: bold; font-size: 13px; display: inline-block; margin-bottom: 12px; }
         .hidden-section { display: none; }
         
-        /* Login Screen */
         #loginScreen { max-width: 400px; margin: 80px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
 
-    <!-- PANTALLA DE LOGIN -->
+    <!-- PANTALLA DE LOGIN CON USUARIO Y CLAVE -->
     <div id="loginScreen">
-        <h2 style="margin-bottom: 20px; text-align: center; color: #1f2937;">Iniciar Sesión</h2>
+        <h2 style="margin-bottom: 6px; text-align: center; color: #1f2937;">Control de Tienda</h2>
+        <p style="text-align: center; color: #6b7280; margin-bottom: 20px; font-size: 12px;">Ingrese su usuario y clave laboral</p>
         <form id="loginForm" style="display: flex; flex-direction: column; gap: 12px;">
             <div class="form-group">
-                <label>Correo Electrónico</label>
-                <input type="email" id="loginEmail" required placeholder="correo@ejemplo.com">
+                <label>Usuario</label>
+                <input type="text" id="loginUsuario" required placeholder="Ej: admin, colaborador1">
             </div>
             <div class="form-group">
-                <label>Contraseña</label>
-                <input type="password" id="loginPassword" required placeholder="********">
+                <label>Clave Laboral</label>
+                <input type="password" id="loginClave" required placeholder="********">
             </div>
-            <button type="submit" class="btn-submit" style="width: 100%; justify-self: center; margin-top: 10px;">Ingresar al Sistema</button>
+            <button type="submit" class="btn-submit" style="width: 100%; justify-self: center; margin-top: 10px;">Ingresar</button>
         </form>
         <div id="loginError" style="color: #ef4444; font-size: 12px; margin-top: 10px; text-align: center;"></div>
     </div>
 
-    <!-- APLICACIÓN PRINCIPAL (OCULTA HASTA LOGIN) -->
+    <!-- APLICACIÓN PRINCIPAL -->
     <div id="appContainer" class="container hidden-section">
         <div id="toastExito">¡Operación realizada con éxito!</div>
         <div id="alertaHorario">🚨 ¡HORARIO DE RETIRO ACTIVO (6:30 PM - 9:00 PM)! Tienes productos que deben retirarse.</div>
@@ -112,7 +112,7 @@
         <header>
             <div>
                 <h1 id="tituloBienvenida">Control en Línea</h1>
-                <p>Rol actual: <span id="spanRol" class="badge" style="font-weight: bold;">...</span></p>
+                <p>Usuario: <span id="spanUserBadge" style="font-weight: bold; color: #2563eb;">...</span> | Rol: <span id="spanRol" class="badge" style="font-weight: bold;">...</span></p>
             </div>
             <button onclick="cerrarSesion()" style="background: #ef4444; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold;">Cerrar Sesión</button>
             <div class="tabs" style="margin-top: 10px; width: 100%;">
@@ -257,8 +257,8 @@
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let currentUser = null;
-        let currentRole = null;
+        let usuarioActual = null;
+        let rolActual = null;
         let productos = [];
         let solicitudesPrecio = [];
         let productosDestruccion = [];
@@ -275,48 +275,47 @@
             setTimeout(() => { toastExito.style.display = 'none'; }, 3000);
         }
 
-        // LOGIN Y VERIFICACIÓN DE ROL
+        // LOGIN CON USUARIO Y CLAVE LABORAL
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value.trim();
+            const usuarioInput = document.getElementById('loginUsuario').value.trim().toLowerCase();
+            const claveInput = document.getElementById('loginClave').value.trim();
             loginError.textContent = '';
 
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) {
-                loginError.textContent = "Error al iniciar sesión: " + error.message;
+            const { data, error } = await supabaseClient
+                .from('perfiles_usuarios')
+                .select('*')
+                .eq('usuario', usuarioInput)
+                .eq('clave', claveInput)
+                .single();
+
+            if (error || !data) {
+                loginError.textContent = "Usuario o clave incorrectos.";
                 return;
             }
 
-            currentUser = data.user;
-            await verificarRolYEntrar();
-        });
-
-        async function verificarRolYEntrar() {
-            if (!currentUser) return;
-            const { data, error } = await supabaseClient.from('perfiles_usuarios').select('rol').eq('email', currentUser.email).single();
-            
-            if (error || !data) {
-                // Si no tiene perfil creado, por defecto se asigna como colaborador
-                currentRole = 'colaborador';
-            } else {
-                currentRole = data.rol;
-            }
+            usuarioActual = data.usuario;
+            rolActual = data.rol;
 
             loginScreen.classList.add('hidden-section');
             appContainer.classList.remove('hidden-section');
-            document.getElementById('spanRol').textContent = currentRole.toUpperCase();
+            document.getElementById('spanUserBadge').textContent = usuarioActual;
+            document.getElementById('spanRol').textContent = rolActual.toUpperCase();
 
-            if (currentRole === 'encargado') {
+            if (rolActual === 'encargado') {
                 document.getElementById('tabBtnDestruccion').classList.remove('hidden-section');
             }
 
             cargarDatos();
-        }
+        });
 
-        async function cerrarSesion() {
-            await supabaseClient.auth.signOut();
-            location.reload();
+        function cerrarSesion() {
+            usuarioActual = null;
+            rolActual = null;
+            appContainer.classList.add('hidden-section');
+            loginScreen.classList.remove('hidden-section');
+            document.getElementById('loginUsuario').value = '';
+            document.getElementById('loginClave').value = '';
         }
 
         function cambiarTab(tab) {
@@ -332,7 +331,7 @@
                 document.getElementById('seccion-solicitudes').classList.remove('hidden-section');
                 document.querySelector('.tabs button:nth-child(2)').classList.add('active');
                 renderizarSolicitudesPrecio();
-            } else if (tab === 'destruccion' && currentRole === 'encargado') {
+            } else if (tab === 'destruccion' && rolActual === 'encargado') {
                 document.getElementById('seccion-destruccion').classList.remove('hidden-section');
                 document.getElementById('tabBtnDestruccion').classList.add('active');
                 renderizarDestruccion();
@@ -346,14 +345,14 @@
             const { data: solData } = await supabaseClient.from('solicitudes_precio').select('*').order('id', { ascending: false });
             if (solData) solicitudesPrecio = solData;
 
-            if (currentRole === 'encargado') {
+            if (rolActual === 'encargado') {
                 const { data: desData } = await supabaseClient.from('productos_destruccion').select('*').order('id', { ascending: false });
                 if (desData) productosDestruccion = desData;
             }
 
             renderizarTablas();
             renderizarSolicitudesPrecio();
-            if (currentRole === 'encargado') renderizarDestruccion();
+            if (rolActual === 'encargado') renderizarDestruccion();
         }
 
         // TIEMPO REAL
@@ -425,7 +424,7 @@
         }
 
         function renderizarDestruccion() {
-            if (currentRole !== 'encargado') return;
+            if (rolActual !== 'encargado') return;
             const grid = document.getElementById('gridDestruccion');
             grid.innerHTML = '';
             document.getElementById('contadorDestruccion').textContent = productosDestruccion.length;
