@@ -211,11 +211,13 @@
                         <label id="labelFecha">Fecha de Caducidad / Expiración</label>
                         <input type="date" id="fechaPrincipal" required>
                     </div>
-                    <!-- CONTENEDOR CLICKEABLE PARA EL CHECKBOX DE TRASLADOS -->
-                    <div onclick="document.getElementById('checkPonerTraslado').click()" style="display: flex; align-items: center; gap: 10px; background: rgba(245, 158, 11, 0.15); padding: 14px; border-radius: 10px; border: 2px dashed #f59e0b; cursor: pointer; margin-top: 4px; user-select: none;">
-                        <input type="checkbox" id="checkPonerTraslado" style="width: 22px; height: 22px; accent-color: #f59e0b; cursor: pointer; pointer-events: none;">
-                        <label for="checkPonerTraslado" style="font-size: 13px; font-weight: 700; color: var(--text-color); cursor: pointer; margin-bottom: 0; pointer-events: none;">🚚 Enviar también a Traslados (Baja Rotación - Aviso 20 días antes)</label>
+                    
+                    <!-- CHECKBOX ESTÁNDAR Y 100% FUNCIONAL -->
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 10px 0; margin-top: 4px;">
+                        <input type="checkbox" id="checkPonerTraslado" style="width: 24px; height: 24px; accent-color: #f59e0b; cursor: pointer; flex-shrink: 0;">
+                        <label for="checkPonerTraslado" style="font-size: 13px; font-weight: 700; color: var(--text-color); cursor: pointer; margin-bottom: 0;">🚚 Enviar también a Traslados (Baja Rotación - Aviso 20 días antes)</label>
                     </div>
+
                     <button type="submit" class="btn-submit">Guardar en la Nube</button>
                 </form>
             </div>
@@ -1064,3 +1066,4 @@
     </script>
 </body>
 </html>
+
