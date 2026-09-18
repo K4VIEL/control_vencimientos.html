@@ -143,7 +143,7 @@
     <!-- APLICACIÓN PRINCIPAL -->
     <div id="appContainer" class="container hidden-section">
         <div id="toastExito">¡Operación realizada con éxito!</div>
-        <div id="alertaHorario">🚨 ¡HORARIO DE RETIRO ACTIVO (6:30 PM - 9:00 PM)! Tienes productos que deben retirarse.</div>
+        <div id="alertaHorario">🚨 ¡HORARIO DE RETIRO ACTIVO (6:30 PM - 9:00 PM)! Tienes productos vencidos que deben retirarse.</div>
 
         <header>
             <div>
@@ -435,7 +435,6 @@
             if (usuarioActual && rolActual) {
                 activarSesionInterfaz();
             } else {
-                loginScreen.classList.add('hidden-section'); // Oculto por defecto
                 loginScreen.classList.remove('hidden-section');
             }
             actualizarVisualTraslado();
@@ -449,12 +448,10 @@
             const fechaElabInput = document.getElementById('fechaElaboracion');
 
             if (categoria === 'legumbre_sin_cad') {
-                // Si es Legumbres Elaboración (-8 días), ocultamos la fecha de caducidad y exigimos la fecha de elaboración
                 grupoCaducidad.style.display = 'none';
                 fechaPrincipalInput.removeAttribute('required');
                 fechaElabInput.setAttribute('required', 'required');
             } else {
-                // Para las demás categorías, mostramos la fecha principal / caducidad
                 grupoCaducidad.style.display = 'flex';
                 fechaPrincipalInput.setAttribute('required', 'required');
             }
@@ -1009,6 +1006,27 @@
             }
         }
 
+        // VERIFICAR HORARIO DE RETIRO (6:30 PM a 9:00 PM) Y PRODUCTOS URGENTES
+        function verificarAlertaHorario(urgentesCount) {
+            const alertaEl = document.getElementById('alertaHorario');
+            if (!alertaEl) return;
+
+            const ahora = new Date();
+            const hora = ahora.getHours();
+            const minutos = ahora.getMinutes();
+            const tiempoMinutos = hora * 60 + minutos;
+
+            // 6:30 PM = 18 * 60 + 30 = 1110 minutos
+            // 9:00 PM = 21 * 60 = 1260 minutos
+            const enHorarioRetiro = (tiempoMinutos >= 1110 && tiempoMinutos <= 1260);
+
+            if (enHorarioRetiro && urgentesCount > 0) {
+                alertaEl.style.display = 'block';
+            } else {
+                alertaEl.style.display = 'none';
+            }
+        }
+
         function renderizarTablas() {
             ['frio', 'legumbre_sin_cad', 'legumbre_con_cad', 'pasillo1', 'pasillo2', 'pasillo3', 'pasillo5', 'urgentes'].forEach(cat => {
                 const el = document.getElementById(`lista-${cat}`);
@@ -1041,7 +1059,16 @@
                 }
             });
             if (tbodyUrgentes && urgentesCount === 0) tbodyUrgentes.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:10px;">Todo al día.</td></tr>`;
+            
+            // Comprobar la alerta de horario
+            verificarAlertaHorario(urgentesCount);
         }
+
+        // Revisar cada minuto si entra o sale del horario de retiro
+        setInterval(() => {
+            const urgentesCount = productos.filter(p => p.fecha_retiro < new Date().toISOString().split('T')[0]).length;
+            verificarAlertaHorario(urgentesCount);
+        }, 60000);
 
         document.getElementById('inputBuscador').addEventListener('input', renderizarTablas);
 
