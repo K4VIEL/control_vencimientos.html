@@ -75,13 +75,11 @@
         
         .reader-container { width: 100%; margin-bottom: 12px; display: none; border: 2px solid var(--primary-color); border-radius: 12px; overflow: hidden; background: #000; }
         
-        .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-        @media(min-width: 768px) { .form-grid { grid-template-columns: repeat(4, 1fr); } }
+        .form-grid { display: flex; flex-direction: column; gap: 12px; }
         .form-group { display: flex; flex-direction: column; gap: 6px; }
         label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
         
         .btn-submit { background: #10b981; color: white; border: none; padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 4px; }
-        @media(min-width: 768px) { .btn-submit { grid-column: 1 / -1; justify-self: end; width: auto; } }
         
         .grid-sections { display: grid; grid-template-columns: 1fr; gap: 16px; }
         @media(min-width: 1024px) { .grid-sections { grid-template-columns: repeat(2, 1fr); } }
@@ -213,9 +211,9 @@
                         <label id="labelFecha">Fecha de Caducidad / Expiración</label>
                         <input type="date" id="fechaPrincipal" required>
                     </div>
-                    <div style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; background: rgba(245, 158, 11, 0.1); padding: 10px; border-radius: 8px; border: 1px dashed #f59e0b;">
-                        <input type="checkbox" id="checkPonerTraslado" style="width: 18px; height: 18px; accent-color: #f59e0b; cursor: pointer;">
-                        <label for="checkPonerTraslado" style="font-size: 13px; font-weight: 700; color: var(--text-color); cursor: pointer;">🚚 Enviar también a Traslados (Baja Rotación - Aviso 20 días antes)</label>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px; background: rgba(245, 158, 11, 0.1); padding: 12px; border-radius: 10px; border: 1px dashed #f59e0b; margin-top: 4px;">
+                        <input type="checkbox" id="checkPonerTraslado" style="width: 20px; height: 20px; accent-color: #f59e0b; cursor: pointer;">
+                        <label for="checkPonerTraslado" style="font-size: 13px; font-weight: 700; color: var(--text-color); cursor: pointer; margin-bottom: 0;">🚚 Enviar también a Traslados (Baja Rotación - Aviso 20 días antes)</label>
                     </div>
                     <button type="submit" class="btn-submit">Guardar en la Nube</button>
                 </form>
@@ -285,7 +283,7 @@
                     <div id="readerSolicitudes" class="reader-container"></div>
                     <button type="button" id="btnCerrarCamSolicitud" class="hidden-section" style="margin-bottom: 10px; background: #ef4444; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 13px; width: 100%; font-weight: bold;">Cerrar Cámara</button>
                     
-                    <form id="formSolicitudPrecio" class="form-grid" style="grid-template-columns: 1fr;">
+                    <form id="formSolicitudPrecio" class="form-grid" style="display: flex; flex-direction: column; gap: 12px;">
                         <div class="form-group"><label>Código de Barras</label><input type="text" id="solCodigo" required placeholder="Código completo..."></div>
                         <div class="form-group"><label>Nombre del Producto</label><input type="text" id="solNombre" placeholder="Descripción del producto..."></div>
                         <div class="form-group"><label>Cantidad</label><input type="number" id="solCantidad" min="1" value="1" required></div>
@@ -306,7 +304,7 @@
                 <div class="counter-badge" id="textoContadorTraslados">Tienes 0 productos en seguimiento</div>
                 
                 <div class="card" style="background: var(--bg-color); border: 1px solid var(--border-color); margin-top: 14px; margin-bottom: 16px;">
-                    <form id="formTraslado" class="form-grid" style="grid-template-columns: 1fr;">
+                    <form id="formTraslado" class="form-grid" style="display: flex; flex-direction: column; gap: 12px;">
                         <div class="form-group"><label>Código de Barras</label><input type="text" id="trasCodigo" required placeholder="Código..."></div>
                         <div class="form-group"><label>Nombre del Producto</label><input type="text" id="trasNombre" required placeholder="Ej: Salsa especial, Lata importada..."></div>
                         <div class="form-group"><label>Cantidad</label><input type="number" id="trasCantidad" min="1" value="1" required></div>
@@ -335,7 +333,7 @@
                     <div id="readerDestruccion" class="reader-container"></div>
                     <button type="button" id="btnCerrarCamDestruccion" class="hidden-section" style="margin-bottom: 10px; background: #ef4444; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 13px; width: 100%; font-weight: bold;">Cerrar Cámara</button>
                     
-                    <form id="formDestruccion" class="form-grid" style="grid-template-columns: 1fr;">
+                    <form id="formDestruccion" class="form-grid" style="display: flex; flex-direction: column; gap: 12px;">
                         <div class="form-group"><label>Código de Barras</label><input type="text" id="desCodigo" required placeholder="Código..."></div>
                         <div class="form-group"><label>Nombre / Descripción</label><input type="text" id="desNombre" required placeholder="Ej: Yogurt Entero 1L"></div>
                         <div class="form-group"><label>Cantidad</label><input type="number" id="desCantidad" min="1" value="1" required></div>
@@ -364,7 +362,7 @@
                 <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 14px;">Crea cuentas, modifica claves o elimina accesos.</p>
                 
                 <div class="card" style="background: var(--bg-color); border: 1px solid var(--border-color); margin-bottom: 16px;">
-                    <form id="formCrearUsuario" class="form-grid" style="grid-template-columns: 1fr;">
+                    <form id="formCrearUsuario" class="form-grid" style="display: flex; flex-direction: column; gap: 12px;">
                         <div class="form-group"><label>Nuevo Usuario</label><input type="text" id="nuevoUsuario" required placeholder="Nombre de usuario..."></div>
                         <div class="form-group"><label>Clave Laboral</label><input type="text" id="nuevaClave" required placeholder="Contraseña..."></div>
                         <div class="form-group">
@@ -1065,4 +1063,3 @@
     </script>
 </body>
 </html>
-
