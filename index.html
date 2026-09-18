@@ -212,10 +212,10 @@
                         <input type="date" id="fechaPrincipal" required>
                     </div>
                     
-                    <!-- CAJA INTERACTIVA 100% FUNCIONAL -->
-                    <div id="cajaCheckTraslado" style="display: flex; align-items: center; gap: 12px; background: rgba(245, 158, 11, 0.12); padding: 14px; border-radius: 12px; border: 2px solid #f59e0b; cursor: pointer; margin-top: 4px;">
-                        <input type="checkbox" id="checkPonerTraslado" style="width: 22px; height: 22px; accent-color: #f59e0b; cursor: pointer;">
-                        <span style="font-size: 13px; font-weight: 700; color: var(--text-color); cursor: pointer; line-height: 1.4;">🚚 Enviar también a Traslados (Baja Rotación - Aviso 20 días antes)</span>
+                    <!-- BOTÓN SELECTOR VISUAL DINÁMICO (CHECKBOX INTERACTIVO) -->
+                    <div id="btnSelectorTraslado" onclick="toggleTrasladoCheckbox()" style="display: flex; align-items: center; gap: 12px; background: rgba(245, 158, 11, 0.08); padding: 14px; border-radius: 12px; border: 2px dashed #f59e0b; cursor: pointer; margin-top: 4px; user-select: none; transition: all 0.2s ease;">
+                        <div id="iconoCheckEstado" style="width: 24px; height: 24px; border-radius: 6px; border: 2px solid #f59e0b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; color: white; flex-shrink: 0; background: transparent;"></div>
+                        <span id="textoCheckEstado" style="font-size: 13px; font-weight: 700; color: var(--text-color); line-height: 1.4;">🚚 Enviar también a Traslados (Baja Rotación - Aviso 20 días antes)</span>
                     </div>
 
                     <button type="submit" class="btn-submit">Guardar en la Nube</button>
@@ -408,6 +408,7 @@
 
         let ocultarUltimoDigitoGlobal = false;
         let html5QrCode = null;
+        let trasladoSeleccionado = false; // Estado lógico de la casilla
 
         const loginScreen = document.getElementById('loginScreen');
         const appContainer = document.getElementById('appContainer');
@@ -438,18 +439,33 @@
             } else {
                 loginScreen.classList.remove('hidden-section');
             }
-
-            // FORZAR CAMBIO DIRECTO EN EL CONTENEDOR DEL CHECKBOX PARA MÓVILES
-            const cajaCheck = document.getElementById('cajaCheckTraslado');
-            const checkInput = document.getElementById('checkPonerTraslado');
-            if (cajaCheck && checkInput) {
-                cajaCheck.addEventListener('click', (e) => {
-                    if (e.target !== checkInput) {
-                        checkInput.checked = !checkInput.checked;
-                    }
-                });
-            }
+            actualizarVisualTraslado();
         });
+
+        function toggleTrasladoCheckbox() {
+            trasladoSeleccionado = !trasladoSeleccionado;
+            actualizarVisualTraslado();
+        }
+
+        function actualizarVisualTraslado() {
+            const caja = document.getElementById('btnSelectorTraslado');
+            const icono = document.getElementById('iconoCheckEstado');
+            const texto = document.getElementById('textoCheckEstado');
+
+            if (trasladoSeleccionado) {
+                caja.style.borderColor = '#ef4444'; // Borde rojo cuando está seleccionado
+                caja.style.background = 'rgba(239, 68, 68, 0.15)';
+                icono.style.background = '#ef4444';
+                icono.style.borderColor = '#ef4444';
+                icono.textContent = '✓';
+            } else {
+                caja.style.borderColor = '#f59e0b'; // Borde amarillo/naranja por defecto
+                caja.style.background = 'rgba(245, 158, 11, 0.08)';
+                icono.style.background = 'transparent';
+                icono.style.borderColor = '#f59e0b';
+                icono.textContent = '';
+            }
+        }
 
         function activarSesionInterfaz() {
             loginScreen.classList.add('hidden-section');
@@ -665,7 +681,7 @@
             const cantidad = parseInt(document.getElementById('cantidadProducto').value) || 1;
             const fechaElab = document.getElementById('fechaElaboracion').value || null;
             const fechaStr = document.getElementById('fechaPrincipal').value;
-            const ponerTraslado = document.getElementById('checkPonerTraslado').checked;
+            const ponerTraslado = trasladoSeleccionado;
 
             let fechaRetiro = new Date(fechaStr + 'T00:00:00');
             if (categoria === 'legumbre_sin_cad') fechaRetiro.setDate(fechaRetiro.getDate() + 8);
@@ -698,7 +714,8 @@
             e.target.reset();
             document.getElementById('cantidadProducto').value = '1';
             document.getElementById('codigoEscaneado').value = '';
-            document.getElementById('checkPonerTraslado').checked = false;
+            trasladoSeleccionado = false;
+            actualizarVisualTraslado();
             mostrarToast(ponerTraslado ? '¡Guardado y enviado a Traslados!' : '¡Guardado exitosamente!');
             cargarDatos();
         });
