@@ -112,7 +112,7 @@
         @media(min-width: 640px) { .barcode-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); } }
         
         .barcode-item { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-        .barcode-box { background: white; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; display: flex; justify-content: center; }
+        .barcode-box { background: white; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; display: flex; justify-content: center; overflow: hidden; }
         .counter-badge { background: #dbeafe; color: #1e40af; padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: 12px; display: inline-block; }
         [data-theme="dark"] .counter-badge { background: #450a0a; color: #fca5a5; }
         .hidden-section { display: none !important; }
@@ -288,9 +288,7 @@
                     
                     <form id="formSolicitudPrecio" class="form-grid" style="display: flex; flex-direction: column; gap: 12px;">
                         <div class="form-group"><label>Código de Barras</label><input type="text" id="solCodigo" required placeholder="Código completo..."></div>
-                        <div class="form-group"><label>Nombre del Producto</label><input type="text" id="solNombre" placeholder="Descripción del producto..."></div>
                         <div class="form-group"><label>Cantidad</label><input type="number" id="solCantidad" min="1" value="1" required></div>
-                        <div class="form-group"><label>Fecha de Elaboración (Opcional)</label><input type="date" id="solElaboracion"></div>
                         <button type="submit" style="background: var(--primary-color); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%;">Generar Etiqueta</button>
                     </form>
                 </div>
@@ -408,7 +406,7 @@
 
         let ocultarUltimoDigitoGlobal = false;
         let html5QrCode = null;
-        let trasladoSeleccionado = false; // Estado lógico de la casilla
+        let trasladoSeleccionado = false;
 
         const loginScreen = document.getElementById('loginScreen');
         const appContainer = document.getElementById('appContainer');
@@ -450,16 +448,15 @@
         function actualizarVisualTraslado() {
             const caja = document.getElementById('btnSelectorTraslado');
             const icono = document.getElementById('iconoCheckEstado');
-            const texto = document.getElementById('textoCheckEstado');
 
             if (trasladoSeleccionado) {
-                caja.style.borderColor = '#ef4444'; // Borde rojo cuando está seleccionado
+                caja.style.borderColor = '#ef4444';
                 caja.style.background = 'rgba(239, 68, 68, 0.15)';
                 icono.style.background = '#ef4444';
                 icono.style.borderColor = '#ef4444';
                 icono.textContent = '✓';
             } else {
-                caja.style.borderColor = '#f59e0b'; // Borde amarillo/naranja por defecto
+                caja.style.borderColor = '#f59e0b';
                 caja.style.background = 'rgba(245, 158, 11, 0.08)';
                 icono.style.background = 'transparent';
                 icono.style.borderColor = '#f59e0b';
@@ -720,17 +717,21 @@
             cargarDatos();
         });
 
+        // SOLICITUDES DE PRECIO GUARDANDO CON COLUMNAS EXACTAS: codigo y cantidad
         document.getElementById('formSolicitudPrecio').addEventListener('submit', async (e) => {
             e.preventDefault();
             const codigo = document.getElementById('solCodigo').value.trim();
-            const nombre = document.getElementById('solNombre').value.trim() || 'Sin descripción';
             const cantidad = parseInt(document.getElementById('solCantidad').value) || 1;
-            const fechaElab = document.getElementById('solElaboracion').value || null;
 
-            await supabaseClient.from('solicitudes_precio').insert([{ codigo, nombre, cantidad, fecha_elaboracion: fechaElab }]);
+            const { error } = await supabaseClient.from('solicitudes_precio').insert([{ codigo, cantidad }]);
+            if (error) {
+                alert("Error al guardar solicitud: " + error.message);
+                return;
+            }
+
             e.target.reset();
             document.getElementById('solCantidad').value = '1';
-            mostrarToast('¡Solicitud añadida!');
+            mostrarToast('¡Solicitud de precio añadida!');
             cargarDatos();
         });
 
@@ -866,10 +867,9 @@
                 const div = document.createElement('div');
                 div.className = 'barcode-item';
                 div.innerHTML = `
-                    <div style="font-size: 13px; font-weight: bold; color: var(--text-color);">${s.nombre || 'Producto'}</div>
+                    <div style="font-size: 13px; font-weight: bold; color: var(--text-color);">Código: ${s.codigo}</div>
                     <div style="font-size: 12px; color: var(--primary-color); font-weight: 600;">Cantidad solicitada: ${s.cantidad}</div>
-                    ${s.fecha_elaboracion ? `<div style="font-size: 11px; color: var(--text-muted);">Elab: ${s.fecha_elaboracion}</div>` : ''}
-                    <div style="font-size: 11px; color: var(--text-muted);">Cod: ${codigoMostrar} ${ocultarUltimoDigitoGlobal ? '(Sin último dígito)' : ''}</div>
+                    ${ocultarUltimoDigitoGlobal ? `<div style="font-size: 11px; color: var(--text-muted);">(Sin último dígito: ${codigoMostrar})</div>` : ''}
                     <div class="barcode-box"><svg id="sol-barcode-${s.id}"></svg></div>
                     <button onclick="eliminarSolicitudPrecio(${s.id})" style="background: #ef4444; color: white; border: none; padding: 8px; border-radius: 8px; width: 100%; cursor:pointer; font-weight:bold;">Impreso / Eliminar</button>
                 `;
@@ -1070,7 +1070,6 @@
         document.getElementById('btnToggleCamSolicitud').addEventListener('click', () => {
             iniciarEscaneoUniversal('readerSolicitudes', 'btnCerrarCamSolicitud', (codigo) => {
                 document.getElementById('solCodigo').value = codigo;
-                document.getElementById('solNombre').focus();
             });
         });
 
