@@ -210,8 +210,12 @@
                         <input type="date" id="fechaElaboracion">
                     </div>
                     <div class="form-group">
-                        <label id="labelFecha">Fecha de Caducidad</label>
+                        <label id="labelFecha">Fecha de Caducidad / Expiración</label>
                         <input type="date" id="fechaPrincipal" required>
+                    </div>
+                    <div style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; background: rgba(245, 158, 11, 0.1); padding: 10px; border-radius: 8px; border: 1px dashed #f59e0b;">
+                        <input type="checkbox" id="checkPonerTraslado" style="width: 18px; height: 18px; accent-color: #f59e0b; cursor: pointer;">
+                        <label for="checkPonerTraslado" style="font-size: 13px; font-weight: 700; color: var(--text-color); cursor: pointer;">🚚 Enviar también a Traslados (Baja Rotación - Aviso 20 días antes)</label>
                     </div>
                     <button type="submit" class="btn-submit">Guardar en la Nube</button>
                 </form>
@@ -293,7 +297,7 @@
             </div>
         </div>
 
-        <!-- SECCIÓN NUEVA: TRASLADOS (BAJA ROTACIÓN) -->
+        <!-- SECCIÓN: TRASLADOS (BAJA ROTACIÓN) -->
         <div id="seccion-traslados" class="hidden-section">
             <div class="traslados-card">
                 <h2 style="font-size: 16px;">🚚 Control de Traslados (Baja Rotación)</h2>
@@ -649,6 +653,7 @@
             const cantidad = parseInt(document.getElementById('cantidadProducto').value) || 1;
             const fechaElab = document.getElementById('fechaElaboracion').value || null;
             const fechaStr = document.getElementById('fechaPrincipal').value;
+            const ponerTraslado = document.getElementById('checkPonerTraslado').checked;
 
             let fechaRetiro = new Date(fechaStr + 'T00:00:00');
             if (categoria === 'legumbre_sin_cad') fechaRetiro.setDate(fechaRetiro.getDate() + 8);
@@ -656,6 +661,7 @@
             else if (categoria === 'frio') fechaRetiro.setDate(fechaRetiro.getDate() - 5);
             else fechaRetiro.setDate(fechaRetiro.getDate() - 3);
 
+            // Guardar en productos del sistema
             await supabaseClient.from('productos_sistema').insert([{
                 codigo,
                 nombre,
@@ -666,10 +672,22 @@
                 fecha_retiro: fechaRetiro.toISOString().split('T')[0]
             }]);
 
+            // Si marcó la casilla, guardar también en traslados
+            if (ponerTraslado) {
+                await supabaseClient.from('productos_traslados').insert([{
+                    codigo,
+                    nombre,
+                    cantidad,
+                    fecha_elaboracion: fechaElab,
+                    fecha_expiracion: fechaStr
+                }]);
+            }
+
             e.target.reset();
             document.getElementById('cantidadProducto').value = '1';
             document.getElementById('codigoEscaneado').value = '';
-            mostrarToast('¡Guardado exitosamente!');
+            document.getElementById('checkPonerTraslado').checked = false;
+            mostrarToast(ponerTraslado ? '¡Guardado y enviado a Traslados!' : '¡Guardado exitosamente!');
             cargarDatos();
         });
 
@@ -687,7 +705,6 @@
             cargarDatos();
         });
 
-        // REGISTRO DE TRASLADOS
         document.getElementById('formTraslado').addEventListener('submit', async (e) => {
             e.preventDefault();
             const codigo = document.getElementById('trasCodigo').value.trim();
@@ -1048,3 +1065,4 @@
     </script>
 </body>
 </html>
+
