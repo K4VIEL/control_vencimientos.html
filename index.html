@@ -109,7 +109,7 @@
         .btn-delete { color: #ef4444; background: rgba(239,68,68,0.1); border: none; padding: 6px 10px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12px; }
         .btn-edit { color: var(--primary-color); background: rgba(37,99,235,0.1); border: none; padding: 6px 10px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12px; margin-right: 4px; }
 
-        .price-request-card, .destruction-card, .usuarios-card { background: var(--card-bg); padding: 16px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .price-request-card, .destruction-card, .usuarios-card, .traslados-card { background: var(--card-bg); padding: 16px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .barcode-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 14px; }
         @media(min-width: 640px) { .barcode-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); } }
         
@@ -159,6 +159,7 @@
             <div class="tabs" style="margin-top: 4px;">
                 <button class="tab-btn active" onclick="cambiarTab('vencimientos')">📦 Retiros</button>
                 <button class="tab-btn" onclick="cambiarTab('solicitudes')">🏷️ Precios (<span id="contadorSolicitudes">0</span>)</button>
+                <button class="tab-btn" onclick="cambiarTab('traslados')">🚚 Traslados (<span id="contadorTraslados">0</span>)</button>
                 <button class="tab-btn hidden-tab" id="tabBtnDestruccion" onclick="cambiarTab('destruccion')">🗑️ Destrucción (<span id="contadorDestruccion">0</span>)</button>
                 <button class="tab-btn hidden-tab" id="tabBtnUsuarios" onclick="cambiarTab('usuarios')">👥 Usuarios</button>
             </div>
@@ -205,6 +206,10 @@
                         <input type="number" id="cantidadProducto" min="1" value="1" required>
                     </div>
                     <div class="form-group">
+                        <label>Fecha de Elaboración (Opcional)</label>
+                        <input type="date" id="fechaElaboracion">
+                    </div>
+                    <div class="form-group">
                         <label id="labelFecha">Fecha de Caducidad</label>
                         <input type="date" id="fechaPrincipal" required>
                     </div>
@@ -221,7 +226,7 @@
                 <h3 style="color: #b91c1c; font-size: 15px;">🚨 Productos Vencidos (Urgente)</h3>
                 <div class="table-responsive">
                     <table>
-                        <thead><tr><th>Producto</th><th>Cant.</th><th>Área</th><th>F. Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
+                        <thead><tr><th>Producto</th><th>Cant.</th><th>Área</th><th>Elab.</th><th>F. Retiro</th><th>Estado</th><th>Acción</th></tr></thead>
                         <tbody id="lista-urgentes"></tbody>
                     </table>
                 </div>
@@ -230,7 +235,7 @@
             <div class="grid-sections">
                 <div class="section-card border-frio">
                     <h3 style="font-size: 14px;">❄️ Nevera / Frío</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-frio"></tbody></table></div>
+                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Elab.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-frio"></tbody></table></div>
                 </div>
                 <div class="section-card border-legsin">
                     <h3 style="font-size: 14px;">🌱 Legumbres (Sin cad.)</h3>
@@ -238,23 +243,23 @@
                 </div>
                 <div class="section-card border-legcon">
                     <h3 style="font-size: 14px;">📦 Legumbres Empacadas</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-legumbre_con_cad"></tbody></table></div>
+                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Elab.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-legumbre_con_cad"></tbody></table></div>
                 </div>
                 <div class="section-card border-pasillo1">
                     <h3 style="font-size: 14px;">🛒 Pasillo 1: Limpieza</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo1"></tbody></table></div>
+                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Elab.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo1"></tbody></table></div>
                 </div>
                 <div class="section-card border-pasillo2">
                     <h3 style="font-size: 14px;">🍿 Pasillo 2: Snack</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo2"></tbody></table></div>
+                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Elab.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo2"></tbody></table></div>
                 </div>
                 <div class="section-card border-pasillo3">
                     <h3 style="font-size: 14px;">🌾 Pasillo 3: Granos</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo3"></tbody></table></div>
+                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Elab.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo3"></tbody></table></div>
                 </div>
                 <div class="section-card border-pasillo5">
                     <h3 style="font-size: 14px;">🔩 Pasillo 5: Ferri</h3>
-                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo5"></tbody></table></div>
+                    <div class="table-responsive"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Elab.</th><th>Caduca</th><th>Retiro</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="lista-pasillo5"></tbody></table></div>
                 </div>
             </div>
         </div>
@@ -278,11 +283,41 @@
                     
                     <form id="formSolicitudPrecio" class="form-grid" style="grid-template-columns: 1fr;">
                         <div class="form-group"><label>Código de Barras</label><input type="text" id="solCodigo" required placeholder="Código completo..."></div>
+                        <div class="form-group"><label>Nombre del Producto</label><input type="text" id="solNombre" placeholder="Descripción del producto..."></div>
                         <div class="form-group"><label>Cantidad</label><input type="number" id="solCantidad" min="1" value="1" required></div>
+                        <div class="form-group"><label>Fecha de Elaboración (Opcional)</label><input type="date" id="solElaboracion"></div>
                         <button type="submit" style="background: var(--primary-color); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%;">Generar Etiqueta</button>
                     </form>
                 </div>
                 <div class="barcode-grid" id="gridSolicitudesPrecio"></div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN NUEVA: TRASLADOS (BAJA ROTACIÓN) -->
+        <div id="seccion-traslados" class="hidden-section">
+            <div class="traslados-card">
+                <h2 style="font-size: 16px;">🚚 Control de Traslados (Baja Rotación)</h2>
+                <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 14px;">Registra productos de poca venta. El sistema te avisará 20 días antes de su expiración para trasladarlos a tiempo.</p>
+                
+                <div class="counter-badge" id="textoContadorTraslados">Tienes 0 productos en seguimiento</div>
+                
+                <div class="card" style="background: var(--bg-color); border: 1px solid var(--border-color); margin-top: 14px; margin-bottom: 16px;">
+                    <form id="formTraslado" class="form-grid" style="grid-template-columns: 1fr;">
+                        <div class="form-group"><label>Código de Barras</label><input type="text" id="trasCodigo" required placeholder="Código..."></div>
+                        <div class="form-group"><label>Nombre del Producto</label><input type="text" id="trasNombre" required placeholder="Ej: Salsa especial, Lata importada..."></div>
+                        <div class="form-group"><label>Cantidad</label><input type="number" id="trasCantidad" min="1" value="1" required></div>
+                        <div class="form-group"><label>Fecha de Elaboración (Opcional)</label><input type="date" id="trasElaboracion"></div>
+                        <div class="form-group"><label>Fecha de Expiración / Vencimiento</label><input type="date" id="trasExpiracion" required></div>
+                        <button type="submit" style="background: #f59e0b; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%;">Registrar para Traslado</button>
+                    </form>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Producto</th><th>Cant.</th><th>Elab.</th><th>Expiración</th><th>Estado de Alerta (20 días)</th><th>Acción</th></tr></thead>
+                        <tbody id="lista-traslados-sistema"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -300,6 +335,7 @@
                         <div class="form-group"><label>Código de Barras</label><input type="text" id="desCodigo" required placeholder="Código..."></div>
                         <div class="form-group"><label>Nombre / Descripción</label><input type="text" id="desNombre" required placeholder="Ej: Yogurt Entero 1L"></div>
                         <div class="form-group"><label>Cantidad</label><input type="number" id="desCantidad" min="1" value="1" required></div>
+                        <div class="form-group"><label>Fecha de Elaboración (Opcional)</label><input type="date" id="desElaboracion"></div>
                         <button type="submit" style="background: var(--primary-color); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%;">Dejar Pendiente</button>
                     </form>
                 </div>
@@ -360,6 +396,7 @@
 
         let productos = [];
         let solicitudesPrecio = [];
+        let productosTraslados = [];
         let productosDestruccion = [];
         let historialDestruccion = [];
         let listaUsuarios = [];
@@ -466,6 +503,7 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('seccion-vencimientos').classList.add('hidden-section');
             document.getElementById('seccion-solicitudes').classList.add('hidden-section');
+            document.getElementById('seccion-traslados').classList.add('hidden-section');
             document.getElementById('seccion-destruccion').classList.add('hidden-section');
             document.getElementById('seccion-usuarios').classList.add('hidden-section');
 
@@ -476,6 +514,10 @@
                 document.getElementById('seccion-solicitudes').classList.remove('hidden-section');
                 document.querySelector('.tabs button:nth-child(2)').classList.add('active');
                 renderizarSolicitudesPrecio();
+            } else if (tab === 'traslados') {
+                document.getElementById('seccion-traslados').classList.remove('hidden-section');
+                document.querySelector('.tabs button:nth-child(3)').classList.add('active');
+                renderizarTraslados();
             } else if (tab === 'destruccion' && (rolActual === 'encargado' || rolActual === 'creador')) {
                 document.getElementById('seccion-destruccion').classList.remove('hidden-section');
                 document.getElementById('tabBtnDestruccion').classList.add('active');
@@ -494,6 +536,9 @@
             const { data: solData } = await supabaseClient.from('solicitudes_precio').select('*').order('id', { ascending: false });
             if (solData) solicitudesPrecio = solData;
 
+            const { data: trasData } = await supabaseClient.from('productos_traslados').select('*').order('id', { ascending: false });
+            if (trasData) productosTraslados = trasData;
+
             if (rolActual === 'encargado' || rolActual === 'creador') {
                 const { data: desData } = await supabaseClient.from('productos_destruccion').select('*').order('id', { ascending: false });
                 if (desData) productosDestruccion = desData;
@@ -508,6 +553,7 @@
 
             renderizarTablas();
             renderizarSolicitudesPrecio();
+            renderizarTraslados();
             if (rolActual === 'encargado' || rolActual === 'creador') renderizarDestruccion();
         }
 
@@ -589,6 +635,7 @@
             .channel('cambios-globales')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'productos_sistema' }, () => cargarDatos())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitudes_precio' }, () => cargarDatos())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'productos_traslados' }, () => cargarDatos())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'productos_destruccion' }, () => cargarDatos())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'historial_destruccion' }, () => cargarDatos())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'perfiles_usuarios' }, () => { if(rolActual === 'creador') cargarUsuariosSistema(); })
@@ -600,6 +647,7 @@
             const nombre = document.getElementById('nombre').value.trim();
             const categoria = document.getElementById('categoria').value;
             const cantidad = parseInt(document.getElementById('cantidadProducto').value) || 1;
+            const fechaElab = document.getElementById('fechaElaboracion').value || null;
             const fechaStr = document.getElementById('fechaPrincipal').value;
 
             let fechaRetiro = new Date(fechaStr + 'T00:00:00');
@@ -613,6 +661,7 @@
                 nombre,
                 categoria,
                 cantidad,
+                fecha_elaboracion: fechaElab,
                 fecha_principal: fechaStr,
                 fecha_retiro: fechaRetiro.toISOString().split('T')[0]
             }]);
@@ -627,14 +676,45 @@
         document.getElementById('formSolicitudPrecio').addEventListener('submit', async (e) => {
             e.preventDefault();
             const codigo = document.getElementById('solCodigo').value.trim();
+            const nombre = document.getElementById('solNombre').value.trim() || 'Sin descripción';
             const cantidad = parseInt(document.getElementById('solCantidad').value) || 1;
+            const fechaElab = document.getElementById('solElaboracion').value || null;
 
-            await supabaseClient.from('solicitudes_precio').insert([{ codigo, cantidad }]);
+            await supabaseClient.from('solicitudes_precio').insert([{ codigo, nombre, cantidad, fecha_elaboracion: fechaElab }]);
             e.target.reset();
             document.getElementById('solCantidad').value = '1';
             mostrarToast('¡Solicitud añadida!');
             cargarDatos();
         });
+
+        // REGISTRO DE TRASLADOS
+        document.getElementById('formTraslado').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const codigo = document.getElementById('trasCodigo').value.trim();
+            const nombre = document.getElementById('trasNombre').value.trim();
+            const cantidad = parseInt(document.getElementById('trasCantidad').value) || 1;
+            const fechaElab = document.getElementById('trasElaboracion').value || null;
+            const fechaExp = document.getElementById('trasExpiracion').value;
+
+            await supabaseClient.from('productos_traslados').insert([{
+                codigo,
+                nombre,
+                cantidad,
+                fecha_elaboracion: fechaElab,
+                fecha_expiracion: fechaExp
+            }]);
+
+            e.target.reset();
+            document.getElementById('trasCantidad').value = '1';
+            mostrarToast('¡Producto registrado para traslado!');
+            cargarDatos();
+        });
+
+        async function eliminarTraslado(id) {
+            await supabaseClient.from('productos_traslados').delete().eq('id', id);
+            mostrarToast('Registro eliminado');
+            cargarDatos();
+        }
 
         function alternarOcultarUltimoDigito() {
             ocultarUltimoDigitoGlobal = !ocultarUltimoDigitoGlobal;
@@ -670,12 +750,14 @@
             const codigo = document.getElementById('desCodigo').value.trim();
             const nombreProd = document.getElementById('desNombre').value.trim();
             const cantidad = parseInt(document.getElementById('desCantidad').value) || 1;
+            const fechaElab = document.getElementById('desElaboracion').value || null;
 
             await supabaseClient.from('productos_destruccion').insert([{
                 codigo: codigo,
                 nombre: nombreProd,
                 cantidad: cantidad,
                 cantidad_original: cantidad,
+                fecha_elaboracion: fechaElab,
                 usuario: usuarioActual || 'desconocido'
             }]);
 
@@ -738,7 +820,9 @@
                 const div = document.createElement('div');
                 div.className = 'barcode-item';
                 div.innerHTML = `
+                    <div style="font-size: 13px; font-weight: bold; color: var(--text-color);">${s.nombre || 'Producto'}</div>
                     <div style="font-size: 12px; color: var(--primary-color); font-weight: 600;">Cantidad solicitada: ${s.cantidad}</div>
+                    ${s.fecha_elaboracion ? `<div style="font-size: 11px; color: var(--text-muted);">Elab: ${s.fecha_elaboracion}</div>` : ''}
                     <div style="font-size: 11px; color: var(--text-muted);">Cod: ${codigoMostrar} ${ocultarUltimoDigitoGlobal ? '(Sin último dígito)' : ''}</div>
                     <div class="barcode-box"><svg id="sol-barcode-${s.id}"></svg></div>
                     <button onclick="eliminarSolicitudPrecio(${s.id})" style="background: #ef4444; color: white; border: none; padding: 8px; border-radius: 8px; width: 100%; cursor:pointer; font-weight:bold;">Impreso / Eliminar</button>
@@ -748,10 +832,49 @@
                 setTimeout(() => {
                     try {
                         JsBarcode(`#sol-barcode-${s.id}`, codigoMostrar, { format: "CODE128", width: 1.5, height: 40, displayValue: true });
-                    } catch (err) {
-                        console.error("Error generando código de barras:", err);
-                    }
+                    } catch (err) {}
                 }, 100);
+            });
+        }
+
+        function renderizarTraslados() {
+            const tbody = document.getElementById('lista-traslados-sistema');
+            tbody.innerHTML = '';
+            document.getElementById('contadorTraslados').textContent = productosTraslados.length;
+            document.getElementById('textoContadorTraslados').textContent = `Tienes ${productosTraslados.length} productos en seguimiento`;
+
+            if (productosTraslados.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:12px;">No hay productos registrados para traslado.</td></tr>`;
+                return;
+            }
+
+            const hoy = new Date();
+            hoy.setHours(0,0,0,0);
+
+            productosTraslados.forEach(t => {
+                const expDate = new Date(t.fecha_expiracion + 'T00:00:00');
+                const diffTime = expDate - hoy;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                let badgeEstado = '';
+                if (diffDays < 0) {
+                    badgeEstado = `<span class="badge-status bg-red">¡VENCIDO (${Math.abs(diffDays)}d atrás)!</span>`;
+                } else if (diffDays <= 20) {
+                    badgeEstado = `<span class="badge-status bg-amber">🚨 ¡TRASLADAR! (Quedan ${diffDays}d)</span>`;
+                } else {
+                    badgeEstado = `<span class="badge-status bg-green">Estable (${diffDays}d restantes)</span>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${t.nombre}</b><br><small style="color:var(--text-muted);">Cod: ${t.codigo}</small></td>
+                    <td><b>${t.cantidad}</b></td>
+                    <td>${t.fecha_elaboracion ? t.fecha_elaboracion : '<span style="color:var(--text-muted)">N/A</span>'}</td>
+                    <td style="font-weight:bold;">${t.fecha_expiracion}</td>
+                    <td>${badgeEstado}</td>
+                    <td><button class="btn-delete" onclick="eliminarTraslado(${t.id})">Borrar</button></td>
+                `;
+                tbody.appendChild(tr);
             });
         }
 
@@ -769,6 +892,7 @@
                 div.innerHTML = `
                     <div style="font-size: 13px; font-weight: bold; color: var(--text-color);">${d.nombre || 'Sin descripción'}</div>
                     <div style="font-size: 12px; color: var(--primary-color); font-weight: 600;">Cantidad pendiente: ${d.cantidad}</div>
+                    ${d.fecha_elaboracion ? `<div style="font-size: 11px; color: var(--text-muted);">Elab: ${d.fecha_elaboracion}</div>` : ''}
                     <div style="font-size: 11px; color: var(--text-muted);">Cod: ${d.codigo} | Creado por: <b>${d.usuario || 'N/A'}</b></div>
                     <div class="barcode-box"><svg id="des-barcode-${d.id}"></svg></div>
                     <button onclick="procesarDestruccionParcial(${d.id}, '${d.codigo}', '${d.nombre || ''}', ${d.cantidad})" style="background: #10b981; color: white; border: none; padding: 8px; border-radius: 8px; width: 100%; cursor:pointer; font-weight:bold;">Destruir Parcial / Total</button>
@@ -815,22 +939,23 @@
             filtrados.forEach(p => {
                 let badge = p.fecha_retiro < hoy ? `<span class="badge-status bg-red">¡URGENTE!</span>` : (p.fecha_retiro === hoy ? `<span class="badge-status bg-amber">Retirar Hoy</span>` : `<span class="badge-status bg-green">Vigente</span>`);
                 const cant = p.cantidad || 1;
+                const elabStr = p.fecha_elaboracion || '<span style="color:var(--text-muted)">N/A</span>';
 
                 if (p.fecha_retiro < hoy && tbodyUrgentes) {
                     urgentesCount++;
                     const trU = document.createElement('tr');
-                    trU.innerHTML = `<td><div><b>${p.nombre}</b></div><small>Cod: ${p.codigo}</small></td><td><b>${cant}</b></td><td>${p.categoria}</td><td style="color:red; font-weight:bold;">${p.fecha_retiro}</td><td>${badge}</td><td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Borrar</button></td>`;
+                    trU.innerHTML = `<td><div><b>${p.nombre}</b></div><small>Cod: ${p.codigo}</small></td><td><b>${cant}</b></td><td>${p.categoria}</td><td>${elabStr}</td><td style="color:red; font-weight:bold;">${p.fecha_retiro}</td><td>${badge}</td><td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Borrar</button></td>`;
                     tbodyUrgentes.appendChild(trU);
                 }
 
                 const tbody = document.getElementById(`lista-${p.categoria}`);
                 if (tbody) {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td><div><b>${p.nombre}</b></div><small>Cod: ${p.codigo}</small></td><td><b>${cant}</b></td><td>${p.fecha_principal}</td><td style="color:var(--primary-color); font-weight:bold;">${p.fecha_retiro}</td><td>${badge}</td><td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Borrar</button></td>`;
+                    tr.innerHTML = `<td><div><b>${p.nombre}</b></div><small>Cod: ${p.codigo}</small></td><td><b>${cant}</b></td><td>${elabStr}</td><td>${p.fecha_principal}</td><td style="color:var(--primary-color); font-weight:bold;">${p.fecha_retiro}</td><td>${badge}</td><td><button class="btn-delete" onclick="eliminarProducto(${p.id})">Borrar</button></td>`;
                     tbody.appendChild(tr);
                 }
             });
-            if (tbodyUrgentes && urgentesCount === 0) tbodyUrgentes.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:10px;">Todo al día.</td></tr>`;
+            if (tbodyUrgentes && urgentesCount === 0) tbodyUrgentes.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:10px;">Todo al día.</td></tr>`;
         }
 
         document.getElementById('inputBuscador').addEventListener('input', renderizarTablas);
@@ -872,9 +997,7 @@
                     detenerCamaraUniversal();
                     onSuccessCallback(decodedText);
                 },
-                (errorMessage) => {
-                    // Errores de escaneo continuo por cuadro se ignoran silenciosamente
-                }
+                (errorMessage) => {}
             ).catch(err => {
                 alert("No se pudo iniciar la cámara. Asegúrate de dar permisos de cámara en tu navegador.");
                 detenerCamaraUniversal();
@@ -890,6 +1013,7 @@
                     document.getElementById('nombre').value = existente.nombre;
                     document.getElementById('categoria').value = existente.categoria;
                     document.getElementById('cantidadProducto').value = existente.cantidad || 1;
+                    if (existente.fecha_elaboracion) document.getElementById('fechaElaboracion').value = existente.fecha_elaboracion;
                     document.getElementById('modoForm').textContent = `⚡ Autocompletado: ${existente.nombre}`;
                 } else {
                     document.getElementById('modoForm').textContent = `Nuevo código: ${codigo}`;
@@ -900,7 +1024,7 @@
         document.getElementById('btnToggleCamSolicitud').addEventListener('click', () => {
             iniciarEscaneoUniversal('readerSolicitudes', 'btnCerrarCamSolicitud', (codigo) => {
                 document.getElementById('solCodigo').value = codigo;
-                document.getElementById('solCantidad').focus();
+                document.getElementById('solNombre').focus();
             });
         });
 
@@ -911,6 +1035,7 @@
                 if (encontrado) {
                     document.getElementById('desNombre').value = encontrado.nombre;
                     document.getElementById('desCantidad').value = encontrado.cantidad || 1;
+                    if (encontrado.fecha_elaboracion) document.getElementById('desElaboracion').value = encontrado.fecha_elaboracion;
                 } else {
                     document.getElementById('desNombre').focus();
                 }
@@ -923,4 +1048,3 @@
     </script>
 </body>
 </html>
-
