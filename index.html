@@ -189,7 +189,7 @@
                     </div>
                     <div class="form-group">
                         <label>Categoría / Área / Pasillo</label>
-                        <select id="categoria" required>
+                        <select id="categoria" onchange="actualizarFormularioCategoria()" required>
                             <option value="frio">❄️ Nevera / Frío (-5 días)</option>
                             <option value="legumbre_sin_cad">🌱 Legumbres Elaboración (-8 días)</option>
                             <option value="legumbre_con_cad">📦 Legumbres Empacadas (-2 días)</option>
@@ -203,13 +203,13 @@
                         <label>Cantidad</label>
                         <input type="number" id="cantidadProducto" min="1" value="1" required>
                     </div>
-                    <div class="form-group">
-                        <label>Fecha de Elaboración (Opcional)</label>
+                    <div class="form-group" id="grupoFechaElaboracion">
+                        <label id="labelElab">Fecha de Elaboración</label>
                         <input type="date" id="fechaElaboracion">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grupoFechaCaducidad">
                         <label id="labelFecha">Fecha de Caducidad / Expiración</label>
-                        <input type="date" id="fechaPrincipal" required>
+                        <input type="date" id="fechaPrincipal">
                     </div>
                     
                     <!-- BOTÓN SELECTOR VISUAL DINÁMICO (CHECKBOX INTERACTIVO) -->
@@ -435,10 +435,30 @@
             if (usuarioActual && rolActual) {
                 activarSesionInterfaz();
             } else {
+                loginScreen.classList.add('hidden-section'); // Oculto por defecto
                 loginScreen.classList.remove('hidden-section');
             }
             actualizarVisualTraslado();
+            actualizarFormularioCategoria();
         });
+
+        function actualizarFormularioCategoria() {
+            const categoria = document.getElementById('categoria').value;
+            const grupoCaducidad = document.getElementById('grupoFechaCaducidad');
+            const fechaPrincipalInput = document.getElementById('fechaPrincipal');
+            const fechaElabInput = document.getElementById('fechaElaboracion');
+
+            if (categoria === 'legumbre_sin_cad') {
+                // Si es Legumbres Elaboración (-8 días), ocultamos la fecha de caducidad y exigimos la fecha de elaboración
+                grupoCaducidad.style.display = 'none';
+                fechaPrincipalInput.removeAttribute('required');
+                fechaElabInput.setAttribute('required', 'required');
+            } else {
+                // Para las demás categorías, mostramos la fecha principal / caducidad
+                grupoCaducidad.style.display = 'flex';
+                fechaPrincipalInput.setAttribute('required', 'required');
+            }
+        }
 
         function toggleTrasladoCheckbox() {
             trasladoSeleccionado = !trasladoSeleccionado;
@@ -677,14 +697,33 @@
             const categoria = document.getElementById('categoria').value;
             const cantidad = parseInt(document.getElementById('cantidadProducto').value) || 1;
             const fechaElab = document.getElementById('fechaElaboracion').value || null;
-            const fechaStr = document.getElementById('fechaPrincipal').value;
             const ponerTraslado = trasladoSeleccionado;
 
-            let fechaRetiro = new Date(fechaStr + 'T00:00:00');
-            if (categoria === 'legumbre_sin_cad') fechaRetiro.setDate(fechaRetiro.getDate() + 8);
-            else if (categoria === 'legumbre_con_cad') fechaRetiro.setDate(fechaRetiro.getDate() - 2);
-            else if (categoria === 'frio') fechaRetiro.setDate(fechaRetiro.getDate() - 5);
-            else fechaRetiro.setDate(fechaRetiro.getDate() - 3);
+            let fechaRetiro = new Date();
+            let fechaPrincipalStr = null;
+
+            if (categoria === 'legumbre_sin_cad') {
+                if (!fechaElab) {
+                    alert("Por favor ingresa la Fecha de Elaboración para calcular el retiro (-8 días).");
+                    return;
+                }
+                let elabDate = new Date(fechaElab + 'T00:00:00');
+                elabDate.setDate(elabDate.getDate() + 8);
+                fechaRetiro = elabDate;
+                fechaPrincipalStr = fechaElab;
+            } else {
+                const fechaStr = document.getElementById('fechaPrincipal').value;
+                if (!fechaStr) {
+                    alert("Por favor ingresa la Fecha de Caducidad.");
+                    return;
+                }
+                fechaPrincipalStr = fechaStr;
+                let fechaCad = new Date(fechaStr + 'T00:00:00');
+                if (categoria === 'legumbre_con_cad') fechaCad.setDate(fechaCad.getDate() - 2);
+                else if (categoria === 'frio') fechaCad.setDate(fechaCad.getDate() - 5);
+                else fechaCad.setDate(fechaCad.getDate() - 3);
+                fechaRetiro = fechaCad;
+            }
 
             // Guardar en productos del sistema
             await supabaseClient.from('productos_sistema').insert([{
@@ -693,7 +732,7 @@
                 categoria,
                 cantidad,
                 fecha_elaboracion: fechaElab,
-                fecha_principal: fechaStr,
+                fecha_principal: fechaPrincipalStr,
                 fecha_retiro: fechaRetiro.toISOString().split('T')[0]
             }]);
 
@@ -704,7 +743,7 @@
                     nombre,
                     cantidad,
                     fecha_elaboracion: fechaElab,
-                    fecha_expiracion: fechaStr
+                    fecha_expiracion: fechaPrincipalStr
                 }]);
             }
 
@@ -713,11 +752,11 @@
             document.getElementById('codigoEscaneado').value = '';
             trasladoSeleccionado = false;
             actualizarVisualTraslado();
+            actualizarFormularioCategoria();
             mostrarToast(ponerTraslado ? '¡Guardado y enviado a Traslados!' : '¡Guardado exitosamente!');
             cargarDatos();
         });
 
-        // SOLICITUDES DE PRECIO GUARDANDO CON COLUMNAS EXACTAS: codigo y cantidad
         document.getElementById('formSolicitudPrecio').addEventListener('submit', async (e) => {
             e.preventDefault();
             const codigo = document.getElementById('solCodigo').value.trim();
@@ -1060,6 +1099,7 @@
                     document.getElementById('categoria').value = existente.categoria;
                     document.getElementById('cantidadProducto').value = existente.cantidad || 1;
                     if (existente.fecha_elaboracion) document.getElementById('fechaElaboracion').value = existente.fecha_elaboracion;
+                    actualizarFormularioCategoria();
                     document.getElementById('modoForm').textContent = `⚡ Autocompletado: ${existente.nombre}`;
                 } else {
                     document.getElementById('modoForm').textContent = `Nuevo código: ${codigo}`;
