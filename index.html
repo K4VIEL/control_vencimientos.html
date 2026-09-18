@@ -212,10 +212,10 @@
                         <input type="date" id="fechaPrincipal" required>
                     </div>
                     
-                    <!-- CHECKBOX ESTÁNDAR Y 100% FUNCIONAL -->
-                    <div style="display: flex; align-items: center; gap: 10px; padding: 10px 0; margin-top: 4px;">
-                        <input type="checkbox" id="checkPonerTraslado" style="width: 24px; height: 24px; accent-color: #f59e0b; cursor: pointer; flex-shrink: 0;">
-                        <label for="checkPonerTraslado" style="font-size: 13px; font-weight: 700; color: var(--text-color); cursor: pointer; margin-bottom: 0;">🚚 Enviar también a Traslados (Baja Rotación - Aviso 20 días antes)</label>
+                    <!-- CAJA INTERACTIVA 100% FUNCIONAL -->
+                    <div id="cajaCheckTraslado" style="display: flex; align-items: center; gap: 12px; background: rgba(245, 158, 11, 0.12); padding: 14px; border-radius: 12px; border: 2px solid #f59e0b; cursor: pointer; margin-top: 4px;">
+                        <input type="checkbox" id="checkPonerTraslado" style="width: 22px; height: 22px; accent-color: #f59e0b; cursor: pointer;">
+                        <span style="font-size: 13px; font-weight: 700; color: var(--text-color); cursor: pointer; line-height: 1.4;">🚚 Enviar también a Traslados (Baja Rotación - Aviso 20 días antes)</span>
                     </div>
 
                     <button type="submit" class="btn-submit">Guardar en la Nube</button>
@@ -437,6 +437,17 @@
                 activarSesionInterfaz();
             } else {
                 loginScreen.classList.remove('hidden-section');
+            }
+
+            // FORZAR CAMBIO DIRECTO EN EL CONTENEDOR DEL CHECKBOX PARA MÓVILES
+            const cajaCheck = document.getElementById('cajaCheckTraslado');
+            const checkInput = document.getElementById('checkPonerTraslado');
+            if (cajaCheck && checkInput) {
+                cajaCheck.addEventListener('click', (e) => {
+                    if (e.target !== checkInput) {
+                        checkInput.checked = !checkInput.checked;
+                    }
+                });
             }
         });
 
